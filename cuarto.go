@@ -6,4 +6,5 @@ import (
 
 type cuarto struct {
 	name    string
+	status  string
 }
