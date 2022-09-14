@@ -4,7 +4,6 @@ import(
 	"fmt"
 	"encoding/json"
 	"net"
-	"net/http"
 )
 
 
@@ -22,7 +21,7 @@ func NuevoServidor() *servidor {
 }
 
 func (s Servidor) InicializaServidor() {
-	ln, err := net.Listen("tcp", ":8080")
+	ln, err := net.Listen("tcp", ":1252")
 	if err != nil {
 		// handle error
 	}
@@ -40,10 +39,6 @@ func (s Servidor) Response(){
 
 }
 
-// Request manda peticiones a los clientes
-func (s Servidor) Request(){
-
-}
 
 /// Parser decodifica el Json entrante
 func (s Servidor) parser(){
