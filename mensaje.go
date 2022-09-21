@@ -1,9 +1,9 @@
 package myp_proyecto1
 
-type Message struct {
+type Mensaje struct {
 	tipo string
 	status string
 	roomname string
 	message string
-	users  map[string]*cliente
+	users  map[string]*Cliente
 }

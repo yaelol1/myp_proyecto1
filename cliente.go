@@ -3,11 +3,14 @@ package myp_proyecto1
 import (
 	"encoding/json"
 	"net"
+	"fmt"
+	"bufio"
 )
 
 type Cliente struct {
 	nombre   string
-	cuartos  map[string]*cuarto
+	cuartos  map[string]*Cuarto
+	conn net.Conn
 }
 
 // TODO: net.Dial -> connection -> Write
@@ -30,4 +33,14 @@ func (c Cliente) Conectar(){
 // Request manda peticiones a los clientes
 func (c Cliente) Request(){
 
+	d := json.NewEncoder(c.conn)
+
+	var msg Mensaje
+
+	err := d.Encode(&msg)
+	fmt.Println(msg, err)
+
+	if err != nil {
+		// handle error
+	}
 }
