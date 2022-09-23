@@ -17,10 +17,14 @@ type Cliente struct {
 
 // NuevoCliente crea el cliente y lo devuelve
 func NuevoCliente() *Cliente {
+	return &Cliente{
+		nombre: "Yael",
+		cuartos: make(map[string]*Cuarto),
+	}
 }
 
 // Conectar conecta al cliente a un puerto
-func (c Cliente) Conectar(){
+func (c *Cliente) Conectar(){
 	conn, err := net.Dial("tcp", ":1252")
 	if err != nil {
 		// handle error
@@ -31,7 +35,7 @@ func (c Cliente) Conectar(){
 
 
 // Request manda peticiones a los clientes
-func (c Cliente) Request(){
+func (c *Cliente) Request(){
 
 	d := json.NewEncoder(c.conn)
 

@@ -15,10 +15,13 @@ type Servidor struct {
 
 // NuevoServidor crea un servidor y devuelve su apuntador
 func NuevoServidor() *Servidor {
+	return &Servidor{
+		cuartos: make(map[string]*Cuarto),
+	}
 
 }
 
-func (s Servidor) InicializaServidor() {
+func (s *Servidor) InicializaServidor() {
 	ln, err := net.Listen("tcp", ":1252")
 	if err != nil {
 		// handle error
@@ -28,14 +31,14 @@ func (s Servidor) InicializaServidor() {
 		if err != nil {
 			// handle error
 		}
-		go handleConnection(conn)
+		go s.handleConnection(conn)
 	}
 }
 
 // handleConnection acepta las conexiones y decide qué hacer con ellas
-func (s Servidor) handleConnection(conn net.Conn) {
+func (s *Servidor) handleConnection(conn net.Conn) {
 	// Decodificador que lee directamente desde el socket
-	d := json.NewDecoder(c)
+	d := json.NewDecoder(conn)
 
 	var msg Mensaje
 
@@ -46,10 +49,25 @@ func (s Servidor) handleConnection(conn net.Conn) {
 		// handle error
 	}
 
-	Response(msg)
+	s.Response(msg, conn)
 }
 
 // Response acepta las respuestas de los clientes
-func (s Servidor) Response(msg Mensaje) {
+func (s *Servidor) Response(msg Mensaje, conn net.Conn) {
+	switch msg.tipo{
+		case "ROOM_MESSAGE":
 
+	}
+	if msg.tipo == "ROOM_MESSAGE"{
+		r, ok := s.rooms[msg.roomname]
+		if !ok {
+			c.msg(fmt.Sprintf("welcome to %s", roomName))
+			return
+			r = &room{
+				name:    roomName,
+				members: make(map[net.Addr]*client),
+			}
+			s.rooms[roomName] = r
+		}
+	}
 }
