@@ -1,9 +1,10 @@
-package myp_proyecto1
+package servidor
 
 import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"github.com/yaelol1/myp_proyecto1/recursos"
 )
 
 // Servidor estructura que contiene los cuartos y los comandos para interactuar
@@ -56,18 +57,13 @@ func (s *Servidor) handleConnection(conn net.Conn) {
 func (s *Servidor) Response(msg Mensaje, conn net.Conn) {
 	switch msg.tipo{
 		case "ROOM_MESSAGE":
-
-	}
-	if msg.tipo == "ROOM_MESSAGE"{
-		r, ok := s.rooms[msg.roomname]
+		r, ok := s.cuartos[msg.roomName]
 		if !ok {
-			c.msg(fmt.Sprintf("welcome to %s", roomName))
-			return
-			r = &room{
-				name:    roomName,
+			r = &Cuarto{
+				name:    msg.roomName,
 				members: make(map[net.Addr]*client),
 			}
-			s.rooms[roomName] = r
+			s.cuartos[msg.roomName] = r
 		}
 	}
 }

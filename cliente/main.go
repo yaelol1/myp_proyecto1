@@ -1,4 +1,4 @@
-package myp_proyecto1
+package cliente
 
 // import (
 // 	"bufio"

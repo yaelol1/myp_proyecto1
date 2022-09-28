@@ -1,11 +1,11 @@
-package myp_proyecto1
+package recursos
 
-//import (
-//	"net"
-//)
-
+import (
+	"github.com/yaelol1/myp_proyecto1/cliente"
+	"net"
+)
 type Cuarto struct {
-	name    string
+	name   string
 	users  map[net.Adrr]*Cliente
 }
 
