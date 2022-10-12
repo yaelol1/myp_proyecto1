@@ -1,16 +1,15 @@
-package cliente
+package main
 
 import (
 	"encoding/json"
 	"net"
 	"fmt"
 	"bufio"
-	"github.com/yaelol1/myp_proyecto1/recursos"
 )
 
 type Cliente struct {
 	nombre   string
-	cuartos  map[string]*Cuarto
+	cuartos map[net.Addr]*Cuarto
 	conn net.Conn
 }
 
@@ -20,7 +19,7 @@ type Cliente struct {
 func NuevoCliente() *Cliente {
 	return &Cliente{
 		nombre: "Yael",
-		cuartos: make(map[string]*Cuarto),
+		cuartos: make(map[net.Addr]*Cuarto),
 	}
 }
 
@@ -32,6 +31,7 @@ func (c *Cliente) Conectar(){
 	}
 	fmt.Fprintf(conn, "GET / HTTP/1.0\r\n\r\n")
 	status, err := bufio.NewReader(conn).ReadString('\n')
+	fmt.Println(status, err)
 }
 
 

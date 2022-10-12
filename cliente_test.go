@@ -1,4 +1,4 @@
-package recursos
+package main
 
 import (
 	"context"

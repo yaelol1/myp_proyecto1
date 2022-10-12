@@ -1,10 +1,9 @@
-package servidor
+package main
 
 import (
 	"encoding/json"
 	"fmt"
 	"net"
-	"github.com/yaelol1/myp_proyecto1/recursos"
 )
 
 // Servidor estructura que contiene los cuartos y los comandos para interactuar
@@ -16,6 +15,7 @@ type Servidor struct {
 
 // NuevoServidor crea un servidor y devuelve su apuntador
 func NuevoServidor() *Servidor {
+	fmt.Print("Hola desde Nuevo ")
 	return &Servidor{
 		cuartos: make(map[string]*Cuarto),
 	}
@@ -23,7 +23,8 @@ func NuevoServidor() *Servidor {
 }
 
 func (s *Servidor) InicializaServidor() {
-	ln, err := net.Listen("tcp", ":1252")
+	fmt.Print("Hola desde inicializa")
+	ln, err := net.Listen("tcp", ":8888")
 	if err != nil {
 		// handle error
 	}
@@ -59,10 +60,7 @@ func (s *Servidor) Response(msg Mensaje, conn net.Conn) {
 		case "ROOM_MESSAGE":
 		r, ok := s.cuartos[msg.roomName]
 		if !ok {
-			r = &Cuarto{
-				name:    msg.roomName,
-				members: make(map[net.Addr]*client),
-			}
+			r =NuevoCuarto(msg.roomName)
 			s.cuartos[msg.roomName] = r
 		}
 	}

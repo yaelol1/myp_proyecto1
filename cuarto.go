@@ -1,18 +1,19 @@
-package recursos
+package main
 
 import (
-	"github.com/yaelol1/myp_proyecto1/cliente"
-	"net"
+		"net"
 )
+
 type Cuarto struct {
 	name   string
-	users  map[net.Adrr]*Cliente
+	users  map[net.Addr]*Cliente
 }
 
 // NuevoCuarto crea un cuarto y lo devuelve.
 func NuevoCuarto(name string) *Cuarto{
 	return &Cuarto{
 		name: name,
+		users: make(map[net.Addr]*Cliente),
 	}
 }
 

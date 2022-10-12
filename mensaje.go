@@ -1,7 +1,6 @@
-package recursos
+package main
 
 import (
-	"github.com/yaelol1/myp_proyecto1/cliente"
 )
 
 type Mensaje struct {
