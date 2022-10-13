@@ -40,9 +40,9 @@ func (s *Servidor) InicializaServidor() {
 // handleConnection acepta las conexiones y decide qué hacer con ellas
 func (s *Servidor) handleConnection(conn net.Conn) {
 	// prueba raw
-	b:=make([]byte, 100)
-	bs, errb := conn.Read(b)
-	fmt.Println("Mensaje:", string(b[:bs]), errb)
+	// b:=make([]byte, 100)
+	// bs, errb := conn.Read(b)
+	// fmt.Println("Mensaje:", string(b[:bs]), errb)
 
 
 	// Decodificador que lee directamente desde el socket
@@ -64,7 +64,7 @@ func (s *Servidor) handleConnection(conn net.Conn) {
 
 // Response acepta las respuestas de los clientes
 func (s *Servidor) Response(msg map[string]interface{} , conn net.Conn) {
-	fmt.Print("Response")
+	fmt.Print("Response", msg)
 
 	tipo, ok1 := msg["type"] // Checking for existing key and its value
 	if !ok1 {

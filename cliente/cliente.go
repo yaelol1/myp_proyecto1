@@ -1,7 +1,7 @@
 package main
 
 import (
-	"encoding/json"
+	//"encoding/json"
 	"net"
 	"fmt"
 	//"bufio"
@@ -44,19 +44,26 @@ func (c *Cliente) Conectar(){
 // Request manda peticiones a los clientes
 func (c *Cliente) Request(){
 
-	d := json.NewEncoder(c.conn)
-	fmt.Printf("HOlaaaa request\n")
+	// d := json.NewEncoder(c.conn)
+	// fmt.Printf("HOlaaaa request\n")
+
+	// type Message struct {
+	// 	Body string
+	// 	Time int64
+	// }
+
+	// m := Message{"Alice", "Hello", 1294706395881547000}
+
+	 // var msg string
+	 // msg = " {\"type\": \"ROOM_MESSAGE\", \"roomname\": \"Sala 1\", \"message\": \"¡Hola sala 1!\" }"
+
+	c.conn.Write([]byte(`{ "type": "ROOM_MESSAGE",   "roomname": "Sala 1",   "message": "¡Hola sala 1!" }`))
 
 
-	 var msg string
-	 msg = " {\"type\": \"ROOM_MESSAGE\", \"roomname\": \"Sala 1\", \"message\": \"¡Hola sala 1!\" }"
-	 c.conn.Write([]byte("holaaa me mandé desde cliente"))
+	 // err := d.Encode(m)
+	 // fmt.Println(msg, err)
 
-	 c.conn.Write([]byte(msg))
-	 err := d.Encode("Holaaaa me mandé desde cliente")
-	 fmt.Println(msg, err)
-
-	 if err != nil {
-	  	// handle error
-	 }
+	 // if err != nil {
+	 //  	// handle error
+	 // }
 }

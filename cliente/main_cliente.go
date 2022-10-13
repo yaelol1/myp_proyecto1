@@ -3,12 +3,18 @@ package main
  import (
 // 	"bufio"
 // 	"log"
-	// "fmt"
+	"fmt"
 // 	"net"
  )
 
 func main(){
 	s := NuevoCliente()
 	s.Conectar();
-	s.Request();
+
+	// Menu
+	var action string
+	for {
+		fmt.Scan(&action)
+	}
+
 }
