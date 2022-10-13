@@ -40,38 +40,71 @@ func (s *Servidor) InicializaServidor() {
 // handleConnection acepta las conexiones y decide qué hacer con ellas
 func (s *Servidor) handleConnection(conn net.Conn) {
 	// Decodificador que lee directamente desde el socket
-	d := json.NewDecoder(conn)
+	decoder := json.NewDecoder(conn)
 
 	// Interfaz, al no saber qué datos tendrá el JSON
-	var f interface{}
-	err := d.Decode(&f)
+	var jsonData interface{}
+	err := decoder.Decode(&jsonData)
 
 	if err != nil {
-		fmt.Println(f, err)
+		fmt.Println(jsonData, err)
 		// handle error
 	}
 
 	// Se convierte a un mapa
-	m := f.(map[string]interface{})
-	s.Response(m, conn)
+	msg := jsonData.(map[string]interface{})
+	s.Response(msg, conn)
 }
 
 // Response acepta las respuestas de los clientes
 func (s *Servidor) Response(msg map[string]interface{} , conn net.Conn) {
 	fmt.Print("Response")
 
-	// val1, ok1 := msg["user"] // Checking for existing key and its value
-	// fmt.Println(val1, ok1)
+	tipo, ok1 := msg["type"] // Checking for existing key and its value
+	if !ok1 {
+		panic("Type needed")
+	}
 
-	// switch msg[tipo]{
-	// 	case "ROOM_MESSAGE":
-	// 	fmt.Print("ROOM_MESSAGE")
+	switch tipo {
+	case "ROOM_MESSAGE":
+		nombreCuarto := msg["roomname"].(string)
+		r, ok := s.cuartos[nombreCuarto]
 
-	// 	fmt.Print(msg.message)
-	// 	r, ok := s.cuartos[msg.roomName]
-	// 	if !ok {
-	// 		r =NuevoCuarto(msg.roomName)
-	// 		s.cuartos[msg.roomName] = r
-	// 	}
-	// }
+		if !ok {
+			r =NuevoCuarto(nombreCuarto)
+			s.cuartos[nombreCuarto] = r
+		}
+
+	case "STATUS":
+		// publicar en el cuartos
+	case "IDENTIFY":
+		// Nombre
+	case "MESSAGE":
+		// mensaje personal
+	case "CREATEROOM":
+		// { "type": "CREATEROOM",
+		// "roomname": "Sala 1" }
+	case "INVITE":
+		// "type": "INVITE",
+		// "roomname": "Sala 1",
+		// "users": [ "Luis", "Antonio", "Fernando" ]
+	case "JOINROOM":
+		// { "type": "JOINROOM",
+		// 	"roomname": "Sala 1" }
+	case "ROOMUSERS":
+		// { "type": "ROOMUSERS",
+		// 	"roomname": "Sala 1" }
+	case "ROOMESSAGE":
+		// "type": "ROOMESSAGE",
+		// "roomname": "Sala 1",
+		// "message": "¡Hola sala 1!" }
+	case "LEAVEROOM":
+		// "type": "LEAVEROOM",
+		// "roomname": "Sala 1" }
+	case "DISCONNECT":
+		// { "type": "DISCONNECT" }
+	case default: 
+
+	}
 }
+
