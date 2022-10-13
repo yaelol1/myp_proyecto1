@@ -7,6 +7,8 @@ package main
 // 	"net"
  )
 
-// func main(){
-// 	fmt.Print("Hola cliente")
-// }
+func main(){
+	s := NuevoCliente()
+	s.Conectar();
+	s.Request();
+}

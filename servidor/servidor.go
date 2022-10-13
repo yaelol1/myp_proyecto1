@@ -39,6 +39,12 @@ func (s *Servidor) InicializaServidor() {
 
 // handleConnection acepta las conexiones y decide qué hacer con ellas
 func (s *Servidor) handleConnection(conn net.Conn) {
+	// prueba raw
+	b:=make([]byte, 100)
+	bs, errb := conn.Read(b)
+	fmt.Println("Mensaje:", string(b[:bs]), errb)
+
+
 	// Decodificador que lee directamente desde el socket
 	decoder := json.NewDecoder(conn)
 
@@ -103,7 +109,8 @@ func (s *Servidor) Response(msg map[string]interface{} , conn net.Conn) {
 		// "roomname": "Sala 1" }
 	case "DISCONNECT":
 		// { "type": "DISCONNECT" }
-	case default: 
+	default:
+		panic("Invalid")
 
 	}
 }
