@@ -1,4 +1,4 @@
-package cliente_test
+package main
 
 import (
 	"context"

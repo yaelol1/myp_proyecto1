@@ -1,4 +1,4 @@
-package recursos_test
+package main
 
 import (
 	"context"
