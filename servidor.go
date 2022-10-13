@@ -42,26 +42,36 @@ func (s *Servidor) handleConnection(conn net.Conn) {
 	// Decodificador que lee directamente desde el socket
 	d := json.NewDecoder(conn)
 
-	var msg Mensaje
-
-	err := d.Decode(&msg)
-	fmt.Println(msg, err)
+	// Interfaz, al no saber qué datos tendrá el JSON
+	var f interface{}
+	err := d.Decode(&f)
 
 	if err != nil {
+		fmt.Println(f, err)
 		// handle error
 	}
 
-	s.Response(msg, conn)
+	// Se convierte a un mapa
+	m := f.(map[string]interface{})
+	s.Response(m, conn)
 }
 
 // Response acepta las respuestas de los clientes
-func (s *Servidor) Response(msg Mensaje, conn net.Conn) {
-	switch msg.tipo{
-		case "ROOM_MESSAGE":
-		r, ok := s.cuartos[msg.roomName]
-		if !ok {
-			r =NuevoCuarto(msg.roomName)
-			s.cuartos[msg.roomName] = r
-		}
-	}
+func (s *Servidor) Response(msg map[string]interface{} , conn net.Conn) {
+	fmt.Print("Response")
+
+	// val1, ok1 := msg["user"] // Checking for existing key and its value
+	// fmt.Println(val1, ok1)
+
+	// switch msg[tipo]{
+	// 	case "ROOM_MESSAGE":
+	// 	fmt.Print("ROOM_MESSAGE")
+
+	// 	fmt.Print(msg.message)
+	// 	r, ok := s.cuartos[msg.roomName]
+	// 	if !ok {
+	// 		r =NuevoCuarto(msg.roomName)
+	// 		s.cuartos[msg.roomName] = r
+	// 	}
+	// }
 }

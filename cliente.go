@@ -40,12 +40,13 @@ func (c *Cliente) Request(){
 
 	d := json.NewEncoder(c.conn)
 
-	var msg Mensaje
+	 fmt.Println(d)
+	// var msg Mensaje
 
-	err := d.Encode(&msg)
-	fmt.Println(msg, err)
+	// err := d.Encode(&msg)
+	// fmt.Println(msg, err)
 
-	if err != nil {
-		// handle error
-	}
+	// if err != nil {
+	// 	// handle error
+	// }
 }
