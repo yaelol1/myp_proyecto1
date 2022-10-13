@@ -3,7 +3,6 @@ package servidor
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/yaelol1/myp_proyecto1/recursos"
 	"net"
 )
 
@@ -18,7 +17,7 @@ type Servidor struct {
 func NuevoServidor() *Servidor {
 	fmt.Print("Hola desde Nuevo ")
 	return &Servidor{
-		cuartos: make(map[string]*recursos.Cuarto),
+		cuartos: make(map[string]*Cuarto),
 	}
 
 }
@@ -43,7 +42,7 @@ func (s *Servidor) handleConnection(conn net.Conn) {
 	// Decodificador que lee directamente desde el socket
 	d := json.NewDecoder(conn)
 
-	var msg recursos.Mensaje
+	var msg Mensaje
 
 	err := d.Decode(&msg)
 	fmt.Println(msg, err)
