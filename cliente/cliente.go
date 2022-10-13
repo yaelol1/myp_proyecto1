@@ -5,6 +5,7 @@ import (
 	"net"
 	"fmt"
 	"bufio"
+	"github.com/yaelol1/myp_proyecto1/recursos"
 )
 
 type Cliente struct {

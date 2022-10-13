@@ -1,12 +1,13 @@
 package recursos
 
 import (
-		"net"
+	"net"
+	"github.com/yaelol1/myp_proyecto1/cliente"
 )
 
 type Cuarto struct {
 	name   string
-	users  map[net.Addr]*Cliente
+	users  map[net.Addr]*cliente.Cliente
 }
 
 // NuevoCuarto crea un cuarto y lo devuelve.
