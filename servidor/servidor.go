@@ -40,27 +40,33 @@ func (s *Servidor) InicializaServidor() {
 
 // handleConnection acepta las conexiones y decide qué hacer con ellas
 func (s *Servidor) handleConnection(conn net.Conn) {
+	// prueba raw
+	// b:=make([]byte, 100)
+	// bs, errb := conn.Read(b)
+	// fmt.Println("Mensaje:", string(b[:bs]), errb)
 
 	// Decodificador que lee directamente desde el socket
 	decoder := json.NewDecoder(conn)
 
 	// Interfaz, al no saber qué datos tendrá el JSON
-	var jsonData interface{}
-	err := decoder.Decode(&jsonData)
+	for{
+		var jsonData interface{}
+		err := decoder.Decode(&jsonData)
 
-	if err != nil {
-		fmt.Println(jsonData, err)
-		// handle error
+		if err != nil {
+			fmt.Println(jsonData, err)
+			return
+			// handle error
+		}
+		// Se convierte a un mapa
+		msg := jsonData.(map[string]interface{})
+		s.Response(msg, conn)
 	}
-
-	// Se convierte a un mapa
-	msg := jsonData.(map[string]interface{})
-	s.Response(msg, conn)
 }
 
 // Response acepta las respuestas de los clientes
 func (s *Servidor) Response(msg map[string]interface{} , conn net.Conn) {
-	fmt.Print("Response", msg)
+	fmt.Print("\n Response \n", msg)
 
 	tipo, ok1 := msg["type"] // Checking for existing key and its value
 	if !ok1 {

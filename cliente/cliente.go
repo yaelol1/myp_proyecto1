@@ -38,14 +38,7 @@ func (c *Cliente) Request(peticion map[string]interface{}){
 
 	d := json.NewEncoder(c.conn)
 
-	err :=  d.Encode(peticion)
-	fmt.Println(peticion)
-
-	mensaje := map[string]interface{}{"type": "STATUS","status": "CONNECTED"}
-	d.Encode(mensaje)
-	fmt.Println(mensaje)
-
-	if err != nil {
+	if err := d.Encode(peticion); err != nil {
 		fmt.Println(err)
 	}
 }
