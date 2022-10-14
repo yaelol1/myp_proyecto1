@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net"
 )
 
@@ -15,7 +16,6 @@ type Servidor struct {
 
 // NuevoServidor crea un servidor y devuelve su apuntador
 func NuevoServidor() *Servidor {
-	fmt.Print("Hola desde Nuevo ")
 	return &Servidor{
 		cuartos: make(map[string]*Cuarto),
 	}
@@ -23,7 +23,7 @@ func NuevoServidor() *Servidor {
 }
 
 func (s *Servidor) InicializaServidor() {
-	fmt.Print("Hola desde inicializa")
+	fmt.Print("Servidor escuchando \n")
 	ln, err := net.Listen("tcp", ":8888")
 	if err != nil {
 		// handle error
@@ -31,7 +31,8 @@ func (s *Servidor) InicializaServidor() {
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
-			// handle error
+			log.Printf("failed to accept connection: %s", err.Error())
+			continue
 		}
 		go s.handleConnection(conn)
 	}
@@ -39,11 +40,6 @@ func (s *Servidor) InicializaServidor() {
 
 // handleConnection acepta las conexiones y decide qué hacer con ellas
 func (s *Servidor) handleConnection(conn net.Conn) {
-	// prueba raw
-	// b:=make([]byte, 100)
-	// bs, errb := conn.Read(b)
-	// fmt.Println("Mensaje:", string(b[:bs]), errb)
-
 
 	// Decodificador que lee directamente desde el socket
 	decoder := json.NewDecoder(conn)

@@ -8,7 +8,6 @@ package main
  )
 
 func main(){
-	fmt.Print("Hola")
 	s := NuevoServidor()
 	s.InicializaServidor();
 }

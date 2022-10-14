@@ -1,7 +1,7 @@
 package main
 
 import (
-	//"encoding/json"
+	"encoding/json"
 	"net"
 	"fmt"
 	//"bufio"
@@ -13,11 +13,8 @@ type Cliente struct {
 	conn net.Conn
 }
 
-// TODO: net.Dial -> connection -> Write
-
-// NuevoCliente crea el cliente y lo devuelve
+// NuevoCliente crea el cliente y lo devuelve.
 func NuevoCliente() *Cliente {
-	fmt.Printf("holaaaa nuevo \n")
 	return &Cliente{
 		nombre: "Yael",
 		cuartos: make(map[string]*string),
@@ -25,45 +22,30 @@ func NuevoCliente() *Cliente {
 	}
 }
 
-// Conectar conecta al cliente a un puerto
+// Conectar conecta al cliente a un puerto.
 func (c *Cliente) Conectar(){
-	fmt.Printf("HOlaaaa conectar \n")
 	conn, err := net.Dial("tcp", ":8888")
 	if err != nil {
 		// handle error
 	}
 
-	// status, err := bufio.NewReader(conn).ReadString('\n')
-	// if false {
-	// 	fmt.Println(status, err)
-	// }
 	c.conn = conn
 }
 
 
-// Request manda peticiones a los clientes
-func (c *Cliente) Request(){
+// Request manda peticiones a los clientes.
+func (c *Cliente) Request(peticion map[string]interface{}){
 
-	// d := json.NewEncoder(c.conn)
-	// fmt.Printf("HOlaaaa request\n")
+	d := json.NewEncoder(c.conn)
 
-	// type Message struct {
-	// 	Body string
-	// 	Time int64
-	// }
+	err :=  d.Encode(peticion)
+	fmt.Println(peticion)
 
-	// m := Message{"Alice", "Hello", 1294706395881547000}
+	mensaje := map[string]interface{}{"type": "STATUS","status": "CONNECTED"}
+	d.Encode(mensaje)
+	fmt.Println(mensaje)
 
-	 // var msg string
-	 // msg = " {\"type\": \"ROOM_MESSAGE\", \"roomname\": \"Sala 1\", \"message\": \"¡Hola sala 1!\" }"
-
-	c.conn.Write([]byte(`{ "type": "ROOM_MESSAGE",   "roomname": "Sala 1",   "message": "¡Hola sala 1!" }`))
-
-
-	 // err := d.Encode(m)
-	 // fmt.Println(msg, err)
-
-	 // if err != nil {
-	 //  	// handle error
-	 // }
+	if err != nil {
+		fmt.Println(err)
+	}
 }
