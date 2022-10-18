@@ -24,7 +24,7 @@ func NuevoCliente() *Cliente {
 
 // Conectar conecta al cliente a un puerto.
 func (c *Cliente) Conectar(){
-	conn, err := net.Dial("tcp", ":8888")
+	conn, err := net.Dial("tcp", ":3306")
 	if err != nil {
 		// handle error
 	}

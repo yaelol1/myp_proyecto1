@@ -1,8 +1,9 @@
 package main
 
  import (
-// 	"bufio"
+	"bufio"
 // 	"log"
+	"os"
 	"strings"
 	"fmt"
 // 	"net"
@@ -22,18 +23,29 @@ func instrucciones(){
 // actionTranslator Toma el input del usuario y lo manda a
 // request al servidor
 func actionTranslator(action string) interface{} {
-	actionArr := strings.SplitAfterN(action, " ", 2)
+	actionArr := strings.SplitAfterN(action, " ",2)
 
+
+	fmt.Print("Imprimiendo acción:")
+	fmt.Println(action)
+	fmt.Print("Imprimiendo arreglo split:")
+	fmt.Println(actionArr)
 	for index, element := range actionArr {
-		fmt.Println(index, element)
+	  	fmt.Println(index, element)
+	}
+
+	fmt.Printf("%T\n", actionArr[0])
+	if actionArr[0] == "msg"{
+		fmt.Println(actionArr[0]+ " if pasó")
 	}
 	switch actionArr[0]{
-		case "/msg":
-		r := map[string]interface{}{"type": "PUBLICMESSAGE", "message": actionArr[0]}
+		case "msg":
+		r := map[string]interface{}{"type": "PUBLICMESSAGE", "message": actionArr[1]}
 		return r
 
 		default:
-		fmt.Printf("Comando no válido \n")
+		fmt.Printf(actionArr[0])
+		fmt.Printf("Comando no váliodo \n")
 	}
 
 	return nil
@@ -45,14 +57,24 @@ func main(){
 	var mensaje map[string]interface{}
 	var action string
 	s := NuevoCliente()
-	s.Conectar();
+	s.Conectar()
+	reader := bufio.NewReader(os.Stdin)
 
 	// Menu
 	fmt.Printf("Bienvenido al chat \n")
-	instrucciones();
+	instrucciones()
 
 	fmt.Printf("Primero esrcibre tu nombre:  \n")
-	fmt.Scan(&action)
+
+	action, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Println("An error occured while reading input. Please try again", err)
+		return
+	}
+
+	// remove the delimeter from the string
+	action = strings.TrimSuffix(action, "\n")
+
 
 	// Envía el nombre
 	mensaje = map[string]interface{}{"type": "IDENTIFY","username": action}
@@ -63,9 +85,16 @@ func main(){
 	s.Request(mensaje)
 
 	for {
-		fmt.Scan(&action)
-		translated := actionTranslator(action).(map[string]interface{})
-		s.Request(translated)
+		action, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Println("An error occured while reading input. Please try again", err)
+			return
+		}
+
+		action = strings.TrimSuffix(action, "\n")
+
+		 translated := actionTranslator(action).(map[string]interface{})
+		 s.Request(translated)
 	}
 
 }

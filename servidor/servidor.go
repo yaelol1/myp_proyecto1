@@ -24,7 +24,7 @@ func NuevoServidor() *Servidor {
 
 func (s *Servidor) InicializaServidor() {
 	fmt.Print("Servidor escuchando \n")
-	ln, err := net.Listen("tcp", ":8888")
+	ln, err := net.Listen("tcp", ":3306")
 	if err != nil {
 		// handle error
 	}
