@@ -1,17 +1,3 @@
-<<<<<<< HEAD
-package cliente
-
- import (
-// 	"bufio"
-// 	"log"
-	// "fmt"
-// 	"net"
- )
-
- func main(){
- 	fmt.Print("Hola cliente")
- }
-=======
 package main
 
  import (
@@ -97,4 +83,3 @@ func main(){
 	}
 
 }
->>>>>>> feature_servidor
