@@ -1,51 +1,50 @@
-package cliente
+package main
 
 import (
 	"encoding/json"
 	"net"
-	"fmt"
 	"bufio"
+	"fmt"
 )
 
 type Cliente struct {
 	nombre   string
-	cuartos map[net.Addr]*Cuarto
+	cuartos map[string]*string
 	conn net.Conn
 }
 
-// TODO: net.Dial -> connection -> Write
-
-// NuevoCliente crea el cliente y lo devuelve
+// NuevoCliente crea el cliente y lo devuelve.
 func NuevoCliente() *Cliente {
 	return &Cliente{
 		nombre: "Yael",
-		cuartos: make(map[net.Addr]*Cuarto),
+		cuartos: make(map[string]*string),
+		conn:  nil,
 	}
 }
 
-// Conectar conecta al cliente a un puerto
+// Conectar conecta al cliente a un puerto.
 func (c *Cliente) Conectar(){
-	conn, err := net.Dial("tcp", ":1252")
+	conn, err := net.Dial("tcp", ":3306")
 	if err != nil {
 		// handle error
 	}
-	fmt.Fprintf(conn, "GET / HTTP/1.0\r\n\r\n")
-	status, err := bufio.NewReader(conn).ReadString('\n')
-	fmt.Println(status, err)
+
+	c.conn = conn
 }
 
+func (c *Cliente) lee(){
+	for{
+		message, _ := bufio.NewReader(c.conn).ReadString('\n')
+		fmt.Print( message)
+	}
+}
 
-// Request manda peticiones a los clientes
-func (c *Cliente) Request(){
+// Request manda peticiones a los clientes.
+func (c *Cliente) Request(peticion map[string]interface{}){
 
 	d := json.NewEncoder(c.conn)
 
-	var msg Mensaje
-
-	err := d.Encode(&msg)
-	fmt.Println(msg, err)
-
-	if err != nil {
-		// handle error
+	if err := d.Encode(peticion); err != nil {
+		fmt.Println(err)
 	}
 }
