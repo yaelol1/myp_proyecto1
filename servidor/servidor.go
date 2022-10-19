@@ -40,10 +40,6 @@ func (s *Servidor) InicializaServidor() {
 
 // handleConnection acepta las conexiones y decide qué hacer con ellas
 func (s *Servidor) handleConnection(conn net.Conn) {
-	// prueba raw
-	// b:=make([]byte, 100)
-	// bs, errb := conn.Read(b)
-	// fmt.Println("Mensaje:", string(b[:bs]), errb)
 
 	// Decodificador que lee directamente desde el socket
 	decoder := json.NewDecoder(conn)
@@ -68,12 +64,43 @@ func (s *Servidor) handleConnection(conn net.Conn) {
 func (s *Servidor) Response(msg map[string]interface{} , conn net.Conn) {
 	fmt.Print("\n Response \n", msg)
 
+	d := json.NewEncoder(conn)
+
+	if err := d.Encode(msg); err != nil {
+		fmt.Println(err)
+	}
+
 	tipo, ok1 := msg["type"] // Checking for existing key and its value
 	if !ok1 {
 		panic("Type needed")
 	}
 
 	switch tipo {
+	case "IDENTIFY":
+		// Nombre
+
+	case "STATUS":
+		// publicar en el cuartos
+	case "USERS":
+
+	case "MESSAGE":
+		// mensaje personal
+
+	case "PUBLIC_MESSAGE":
+
+	case "NEW_ROOM":
+		// { "type": "CREATEROOM",
+		// "roomname": "Sala 1" }
+	case "INVITE":
+		// "type": "INVITE",
+		// "roomname": "Sala 1",
+		// "users": [ "Luis", "Antonio", "Fernando" ]
+	case "JOIN_ROOM":
+		// { "type": "JOINROOM",
+		// 	"roomname": "Sala 1" }
+	case "ROOM_USERS":
+		// { "type": "ROOMUSERS",
+		// 	"roomname": "Sala 1" }
 	case "ROOM_MESSAGE":
 		nombreCuarto := msg["roomname"].(string)
 		r, ok := s.cuartos[nombreCuarto]
@@ -82,37 +109,16 @@ func (s *Servidor) Response(msg map[string]interface{} , conn net.Conn) {
 			r =NuevoCuarto(nombreCuarto)
 			s.cuartos[nombreCuarto] = r
 		}
-
-	case "STATUS":
-		// publicar en el cuartos
-	case "IDENTIFY":
-		// Nombre
-	case "MESSAGE":
-		// mensaje personal
-	case "CREATEROOM":
-		// { "type": "CREATEROOM",
-		// "roomname": "Sala 1" }
-	case "INVITE":
-		// "type": "INVITE",
-		// "roomname": "Sala 1",
-		// "users": [ "Luis", "Antonio", "Fernando" ]
-	case "JOINROOM":
-		// { "type": "JOINROOM",
-		// 	"roomname": "Sala 1" }
-	case "ROOMUSERS":
-		// { "type": "ROOMUSERS",
-		// 	"roomname": "Sala 1" }
-	case "ROOMESSAGE":
 		// "type": "ROOMESSAGE",
 		// "roomname": "Sala 1",
 		// "message": "¡Hola sala 1!" }
-	case "LEAVEROOM":
+	case "LEAVE_ROOM":
 		// "type": "LEAVEROOM",
 		// "roomname": "Sala 1" }
 	case "DISCONNECT":
 		// { "type": "DISCONNECT" }
 	default:
-		panic("Invalid")
+		fmt.Print("invalid", msg)
 
 	}
 }

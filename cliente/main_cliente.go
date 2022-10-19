@@ -2,11 +2,9 @@ package main
 
  import (
 	"bufio"
-// 	"log"
 	"os"
 	"strings"
 	"fmt"
-// 	"net"
  )
 
 // instrucciones imprime las instrucciones de las funciones
@@ -23,24 +21,12 @@ func instrucciones(){
 // actionTranslator Toma el input del usuario y lo manda a
 // request al servidor
 func actionTranslator(action string) interface{} {
-	actionArr := strings.SplitAfterN(action, " ",2)
+	actionArr := strings.SplitN(action, " ",2)
 
 
-	fmt.Print("Imprimiendo acción:")
-	fmt.Println(action)
-	fmt.Print("Imprimiendo arreglo split:")
-	fmt.Println(actionArr)
-	for index, element := range actionArr {
-	  	fmt.Println(index, element)
-	}
-
-	fmt.Printf("%T\n", actionArr[0])
-	if actionArr[0] == "msg"{
-		fmt.Println(actionArr[0]+ " if pasó")
-	}
 	switch actionArr[0]{
-		case "msg":
-		r := map[string]interface{}{"type": "PUBLICMESSAGE", "message": actionArr[1]}
+		case "/msg":
+		r := map[string]interface{}{"type": "PUBLIC_MESSAGE", "message": actionArr[1]}
 		return r
 
 		default:
@@ -56,8 +42,9 @@ func actionTranslator(action string) interface{} {
 func main(){
 	var mensaje map[string]interface{}
 	var action string
-	s := NuevoCliente()
-	s.Conectar()
+	c := NuevoCliente()
+	c.Conectar()
+	go c.lee()
 	reader := bufio.NewReader(os.Stdin)
 
 	// Menu
@@ -69,7 +56,6 @@ func main(){
 	action, err := reader.ReadString('\n')
 	if err != nil {
 		fmt.Println("An error occured while reading input. Please try again", err)
-		return
 	}
 
 	// remove the delimeter from the string
@@ -78,23 +64,23 @@ func main(){
 
 	// Envía el nombre
 	mensaje = map[string]interface{}{"type": "IDENTIFY","username": action}
-	s.Request(mensaje)
+	c.Request(mensaje)
 
 	// Envía el status como conectado
 	mensaje = map[string]interface{}{"type": "STATUS","status": "CONNECTED"}
-	s.Request(mensaje)
+	c.Request(mensaje)
 
 	for {
+		// Pide la acción nueva
 		action, err := reader.ReadString('\n')
 		if err != nil {
 			fmt.Println("An error occured while reading input. Please try again", err)
-			return
 		}
 
 		action = strings.TrimSuffix(action, "\n")
 
 		 translated := actionTranslator(action).(map[string]interface{})
-		 s.Request(translated)
+		 c.Request(translated)
 	}
 
 }

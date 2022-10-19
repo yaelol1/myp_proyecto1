@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/json"
 	"net"
+	"bufio"
 	"fmt"
-	//"bufio"
 )
 
 type Cliente struct {
@@ -32,6 +32,11 @@ func (c *Cliente) Conectar(){
 	c.conn = conn
 }
 
+func (c *Cliente) lee(){
+
+	message, _ := bufio.NewReader(c.conn).ReadString('\n')
+	fmt.Print( message)
+}
 
 // Request manda peticiones a los clientes.
 func (c *Cliente) Request(peticion map[string]interface{}){
