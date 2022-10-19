@@ -61,7 +61,6 @@ func main(){
 	// remove the delimeter from the string
 	action = strings.TrimSuffix(action, "\n")
 
-
 	// Envía el nombre
 	mensaje = map[string]interface{}{"type": "IDENTIFY","username": action}
 	c.Request(mensaje)

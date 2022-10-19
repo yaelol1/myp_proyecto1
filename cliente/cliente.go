@@ -33,9 +33,10 @@ func (c *Cliente) Conectar(){
 }
 
 func (c *Cliente) lee(){
-
-	message, _ := bufio.NewReader(c.conn).ReadString('\n')
-	fmt.Print( message)
+	for{
+		message, _ := bufio.NewReader(c.conn).ReadString('\n')
+		fmt.Print( message)
+	}
 }
 
 // Request manda peticiones a los clientes.

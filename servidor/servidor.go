@@ -62,7 +62,7 @@ func (s *Servidor) handleConnection(conn net.Conn) {
 
 // Response acepta las respuestas de los clientes
 func (s *Servidor) Response(msg map[string]interface{} , conn net.Conn) {
-	fmt.Print("\n Response \n", msg)
+	fmt.Print("\n Response: ", msg)
 
 	d := json.NewEncoder(conn)
 
@@ -78,7 +78,6 @@ func (s *Servidor) Response(msg map[string]interface{} , conn net.Conn) {
 	switch tipo {
 	case "IDENTIFY":
 		// Nombre
-
 	case "STATUS":
 		// publicar en el cuartos
 	case "USERS":
