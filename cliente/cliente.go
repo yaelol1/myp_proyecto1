@@ -1,4 +1,4 @@
-package cliente
+package main
 
 import (
 	"encoding/json"
@@ -76,7 +76,7 @@ func (c *Cliente) response(msg map[string]interface{}){
 	case "LEFT_ROOM":
 	case "DISCONECTED":
 	default:
-		fmt.Print("invalid", msg)
+		fmt.Print("DEBUG: invalid", msg)
 	}
 }
 

@@ -1,4 +1,4 @@
-package servidor
+package main
 
 import (
 	"encoding/json"
@@ -28,12 +28,19 @@ func (s *Servidor) InicializaServidor() {
 	if err != nil {
 		// handle error
 	}
+
+	general := NuevoCuarto("general")
+	s.cuartos["General"] = general
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
 			log.Printf("failed to accept connection: %s", err.Error())
 			continue
 		}
+		// add accepted connection to the general room
+		general.agregaIntegrante(conn, "")
+
+		// handle input from connection
 		go s.handleConnection(conn)
 	}
 }
@@ -64,7 +71,6 @@ func (s *Servidor) handleConnection(conn net.Conn) {
 func (s *Servidor) Response(msg map[string]interface{} , conn net.Conn) {
 	fmt.Print("\n Response: ", msg)
 
-	d := json.NewEncoder(conn)
 
 	tipo, ok1 := msg["type"] // Checking for existing key and its value
 	if !ok1 {
@@ -73,51 +79,30 @@ func (s *Servidor) Response(msg map[string]interface{} , conn net.Conn) {
 
 	switch tipo {
 	case "IDENTIFY":
-		// Nombre
 	case "STATUS":
-		// publicar en el cuartos
 	case "USERS":
-
 	case "MESSAGE":
-		// mensaje personal
-
 	case "PUBLIC_MESSAGE":
-
-		if err := d.Encode(msg); err != nil {
-			fmt.Println(err)
-		}
+		general := s.cuartos["General"]
+		general.Broadcast(conn, msg["message"].(string))
 
 	case "NEW_ROOM":
-		// { "type": "CREATEROOM",
-		// "roomname": "Sala 1" }
 	case "INVITE":
-		// "type": "INVITE",
-		// "roomname": "Sala 1",
-		// "users": [ "Luis", "Antonio", "Fernando" ]
 	case "JOIN_ROOM":
-		// { "type": "JOINROOM",
-		// 	"roomname": "Sala 1" }
 	case "ROOM_USERS":
-		// { "type": "ROOMUSERS",
-		// 	"roomname": "Sala 1" }
 	case "ROOM_MESSAGE":
 		nombreCuarto := msg["roomname"].(string)
 		r, ok := s.cuartos[nombreCuarto]
 
 		if !ok {
-			r =NuevoCuarto(nombreCuarto)
-			s.cuartos[nombreCuarto] = r
+			break
 		}
-		// "type": "ROOMESSAGE",
-		// "roomname": "Sala 1",
-		// "message": "¡Hola sala 1!" }
+		fmt.Println(r)
 	case "LEAVE_ROOM":
-		// "type": "LEAVEROOM",
-		// "roomname": "Sala 1" }
 	case "DISCONNECT":
-		// { "type": "DISCONNECT" }
 	default:
 		fmt.Print("invalid", msg)
 
 	}
 }
+

@@ -46,7 +46,7 @@ Para usar el cliente, el servidor tiene que estar corriendo.
 ### Servidor
 ```
 $ cd servidor
-$ go build 
+$ go build .
 $ ./servidor
 ```
 
@@ -54,6 +54,6 @@ $ ./servidor
 
 ```
 $ cd cliente
-$ go build 
+$ go build .
 $ ./cliente
 ```

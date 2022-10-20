@@ -1,4 +1,4 @@
-package cliente
+package main
 
  import (
 	"bufio"
@@ -35,12 +35,15 @@ func actionTranslator(action string) interface{} {
 		r := map[string]interface{}{"type": "PUBLIC_MESSAGE", "message": actionArr[1]}
 		return r
 
-		case "info":
+		case "/info":
 		instrucciones()
+
+		case "/disconnect":
+		os.Exit(0)
 
 		default:
 		fmt.Printf(actionArr[0])
-		fmt.Printf("Comando no válido, para imprimir la lista de comandos escriba /info \n")
+		fmt.Printf("\n Comando no válido, para imprimir la lista de comandos escriba /info \n")
 	}
 
 	return nil
@@ -60,7 +63,7 @@ func main(){
 	fmt.Printf("Bienvenido al chat \n")
 	instrucciones()
 
-	fmt.Printf("Primero esrcibre tu nombre:  \n")
+	fmt.Printf("\n \nPrimero esrcibre tu nombre:  \n")
 
 	action, err := reader.ReadString('\n')
 	if err != nil {
