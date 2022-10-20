@@ -65,6 +65,9 @@ func (c *Cliente) response(msg map[string]interface{}){
 
 
 	switch tipo {
+	case "ERROR":
+	case "WARNING":
+	case "INFO":
 	case "NEW_USER":
 	case "NEW_STATUS":
 	case "USER_LIST":

@@ -35,6 +35,12 @@ func actionTranslator(action string) interface{} {
 		r := map[string]interface{}{"type": "PUBLIC_MESSAGE", "message": actionArr[1]}
 		return r
 
+		case "/msg":
+
+		recipAndMsg := strings.SplitN(actionArr[1], " ",2)
+		r := map[string]interface{}{"type": "MESSAGE", "username": recipAndMsg[0],"message": recipAndMsg[1]}
+		return r
+
 		case "/info":
 		instrucciones()
 
