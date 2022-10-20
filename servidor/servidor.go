@@ -1,4 +1,4 @@
-package main
+package servidor
 
 import (
 	"encoding/json"
@@ -45,8 +45,8 @@ func (s *Servidor) handleConnection(conn net.Conn) {
 	decoder := json.NewDecoder(conn)
 
 	// Interfaz, al no saber qué datos tendrá el JSON
+	var jsonData interface{}
 	for{
-		var jsonData interface{}
 		err := decoder.Decode(&jsonData)
 
 		if err != nil {
@@ -66,10 +66,6 @@ func (s *Servidor) Response(msg map[string]interface{} , conn net.Conn) {
 
 	d := json.NewEncoder(conn)
 
-	if err := d.Encode(msg); err != nil {
-		fmt.Println(err)
-	}
-
 	tipo, ok1 := msg["type"] // Checking for existing key and its value
 	if !ok1 {
 		panic("Type needed")
@@ -86,6 +82,10 @@ func (s *Servidor) Response(msg map[string]interface{} , conn net.Conn) {
 		// mensaje personal
 
 	case "PUBLIC_MESSAGE":
+
+		if err := d.Encode(msg); err != nil {
+			fmt.Println(err)
+		}
 
 	case "NEW_ROOM":
 		// { "type": "CREATEROOM",

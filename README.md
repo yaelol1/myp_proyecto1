@@ -6,7 +6,9 @@ Proyecto de chat, cliente y servidor para la clase de modelado y programación.
 
 Go
 ---
-El proyecto está hecho en Go, principalmente porque es un lenguaje con orientación a objetos, rápido y con una comunidad bastante grande, que al momento de buscar bibliotecas para por ejemplo Json que se ocupará en este proyecto; será fácil encontrarlas.
+El proyecto está hecho en Go, principalmente porque es un lenguaje con orientación a objetos, rápido y con
+una comunidad bastante grande, que al momento de buscar bibliotecas para por ejemplo Json que se ocupará
+en este proyecto; será fácil encontrarlas.
 
 ### Ventajas
 
@@ -19,14 +21,39 @@ El proyecto está hecho en Go, principalmente porque es un lenguaje con orientac
 - Go build para compilar
 
 ### Desventajas
-- Bindings para interfaces gráficas
+- Bindings para interfaces gráficas no son comunes
 
-## Objetos
+## Objetos (Estructuras en go)
+
+### Paquete cliente
+
 - Cliente
   - Nombre
+  - Conexión
   - Cuartos
+
+### Paquete Servidor
+
 - Cuarto
   - Nombre
   - Integrantes
 - Servidor
-  - Formato Json
+  - Cuartos
+
+## Compilar
+Para usar el cliente, el servidor tiene que estar corriendo.
+
+### Servidor
+```
+$ cd servidor
+$ go build 
+$ ./servidor
+```
+
+### Cliente
+
+```
+$ cd cliente
+$ go build 
+$ ./cliente
+```

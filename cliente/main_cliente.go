@@ -1,4 +1,4 @@
-package main
+package cliente
 
  import (
 	"bufio"
@@ -10,12 +10,18 @@ package main
 // instrucciones imprime las instrucciones de las funciones
 // del chat.
 func instrucciones(){
-	fmt.Printf("Para mandar mensaje /msg mensaje \n")
-	fmt.Printf("\n")
-	fmt.Printf("\n")
-	fmt.Printf("\n")
-	fmt.Printf("\n")
-	fmt.Printf("\n")
+	fmt.Printf("Para mandar mensaje publico /msgAll mensaje \n")
+	fmt.Printf("Para mandar mensaje privado /msg usuario mensaje \n")
+	fmt.Printf("Para mandar mensaje a un cuarto /msg cuarto mensaje \n")
+	fmt.Printf("Para mandar invitación a un cuarto /msg cuarto mensaje \n")
+	fmt.Printf("Para crear un cuarto /room nombreCuarto usuario1 usuario2 ... (Los usuarios son opcionales)\n")
+	fmt.Printf("Para invitar alguien a un cuarto /room nombreCuarto usuario1 usuario2 ... \n")
+	fmt.Printf("Para acepar una invitación a un cuarto /accept nombreCuarto \n")
+	fmt.Printf("Para pedir una lista de todos los usuarios /list \n")
+	fmt.Printf("Para pedir una lista de todos los usuarios en un cuarto /list nombreCuarto\n")
+	fmt.Printf("Para abandonar un cuarto /leave nombreCuarto \n")
+	fmt.Printf("Para cerrar la aplicación /disconnect \n")
+	fmt.Printf("Para imprimir las instrucciones otra vez /info \n")
 }
 
 // actionTranslator Toma el input del usuario y lo manda a
@@ -25,13 +31,16 @@ func actionTranslator(action string) interface{} {
 
 
 	switch actionArr[0]{
-		case "/msg":
+		case "/msgAll":
 		r := map[string]interface{}{"type": "PUBLIC_MESSAGE", "message": actionArr[1]}
 		return r
 
+		case "info":
+		instrucciones()
+
 		default:
 		fmt.Printf(actionArr[0])
-		fmt.Printf("Comando no váliodo \n")
+		fmt.Printf("Comando no válido, para imprimir la lista de comandos escriba /info \n")
 	}
 
 	return nil
@@ -78,8 +87,10 @@ func main(){
 
 		action = strings.TrimSuffix(action, "\n")
 
-		 translated := actionTranslator(action).(map[string]interface{})
-		 c.Request(translated)
+		translated := actionTranslator(action)
+		if translated != nil{
+			c.Request(translated.(map[string]interface{}))
+		}
 	}
 
 }
