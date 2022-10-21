@@ -19,7 +19,7 @@ func NuevoCuarto(name string) *Cuarto{
 	}
 }
 
-// userList manda una lista con todos los usuarios
+// userList manda una lista con todos los usuarios.
 func (c *Cuarto) userList() []string {
 	users := make([]string, 0)
 	for _, n := range c.users {

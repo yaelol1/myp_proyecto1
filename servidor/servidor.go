@@ -56,6 +56,12 @@ func (s *Servidor) handleConnection(conn net.Conn) {
 	// bs, errb := conn.Read(b)
 	// fmt.Println("Mensaje:", string(b[:bs]), errb)
 
+	// Si hay en error solo cierra la conexión
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println("work failed:", err)
+		}
+	}()
 	// Decodificador que lee directamente desde el socket
 	decoder := json.NewDecoder(conn)
 
@@ -80,10 +86,13 @@ func (s *Servidor) handleConnection(conn net.Conn) {
 func (s *Servidor) Response(msg map[string]interface{}, conn net.Conn) {
 	fmt.Print("\n Request: ", msg)
 
-	tipo, ok1 := msg["type"] // Checking for existing key and its value
-	if !ok1 {
-		panic("Type needed")
-	}
+	// en caso de error solo termina la función
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println("work failed:", err)
+		}
+	}()
+	tipo := msg["type"] // Checking for existing key and its value
 
 	switch tipo {
 
@@ -118,6 +127,11 @@ func (s *Servidor) Response(msg map[string]interface{}, conn net.Conn) {
 		fmt.Print("invalid", msg)
 
 	}
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println("work failed:", err)
+		}
+	}()
 }
 
 // send envía un mensaje a una sola conexión.
@@ -129,6 +143,7 @@ func (s *Servidor) send(conn net.Conn, msg map[string]interface{}) {
 }
 
 // validaEntrada valida la entrada de datos.
+// TODO: Necesario?
 func (s *Servidor) validaEntrada(entrada string, msg net.Conn) string {
 	panic("")
 }
@@ -146,13 +161,30 @@ func (s *Servidor) userName(conn net.Conn) string {
 // idetify identifica a un usuario en todo el servidor, además de cambiar su
 // nombre en general.
 func (s *Servidor) identify(conn net.Conn, msg map[string]interface{}) {
-	usuario, ok1 := msg["username"] // Checking for existing key and its value
+	username, ok1 := msg["username"] // Checking for existing key and its value
 	if !ok1 {
 		return
 	}
-	usuarioS := usuario.(string)
-	s.users[usuarioS] = conn
-	s.cuartos["General"].agregaIntegrante(conn, usuarioS)
+
+	userName := username.(string)
+	_, nameTaken := s.users[userName]
+	if !nameTaken {
+		s.users[userName] = conn
+		s.cuartos["General"].agregaIntegrante(conn, userName)
+
+		response := map[string]interface{}{"type": "NEW_USER",
+			"username": userName}
+
+		s.cuartos["General"].Broadcast(conn, response)
+		return
+	}
+
+	selfResponse := map[string]interface{}{"type": "WARNING",
+		"message": "El usuario '"+ userName+"' ya existe",
+		"operation": "IDENTIFY",
+		"username": userName}
+	s.send(conn, selfResponse)
+
 }
 
 // status cambia el status del usuario.
@@ -166,7 +198,8 @@ func (s *Servidor) status(conn net.Conn, msg map[string]interface{}) {
 
 // usersList envía una lista de todos los usuarios en el servidor.
 func (s *Servidor) usersList(conn net.Conn, msg map[string]interface{}) {
-	users := s.cuartos["General"].userList
+	var users []string
+	users = s.cuartos["General"].userList()
 	selfResponse := map[string]interface{}{"type": "USER_LIST",
 		"usernames": users}
 	s.send(conn, selfResponse)
@@ -266,16 +299,12 @@ func (s *Servidor) joinRoom(conn net.Conn, msg map[string]interface{}) {
 	roomName := msg["roomname"].(string)
 	roomToJoin := s.cuartos[roomName]
 	str := roomToJoin.obtenNombre(conn)
-	fmt.Println(str)
 	if str == "" {
-		fmt.Println("DEBUG: en hasPrefix: En str == \"\"  ")
 		return
 	}
 	if strings.HasPrefix(str, conn.RemoteAddr().String()+" ") {
 		roomToJoin.agregaIntegrante(conn,
 			strings.TrimPrefix(str, conn.RemoteAddr().String()+" "))
-
-		fmt.Println("DEBUG: en hasPrefix")
 		return
 	}
 }
@@ -297,15 +326,34 @@ func (s *Servidor) roomMessage(conn net.Conn, msg map[string]interface{}) {
 	if !ok {
 		return
 	}
-	fmt.Println(r)
+
+	userName := s.userName(conn)
+	response := map[string]interface{}{"type": "ROOM_MESSAGE_FROM",
+		"roomname": nombreCuarto,
+		"username": userName,
+		"message":  msg["message"]}
+	r.Broadcast(conn, response)
+
+	selfResponse := map[string]interface{}{"type": "INFO",
+		"message":   "success",
+		"operation": "ROOM_MESSAGE"}
+	s.send(conn, selfResponse)
 }
 
 // leaveRoom
 func (s *Servidor) leaveRoom(conn net.Conn, msg map[string]interface{}) {
+	roomname := msg["roomname"].(string)
+	room := s.cuartos[roomname]
+
+	room.eliminaIntegrante(conn)
 }
 
 // disconnect
 func (s *Servidor) disconnect(conn net.Conn, msg map[string]interface{}) {
+
+	for _, room := range s.cuartos {
+		room.eliminaIntegrante(conn)
+	}
 }
 
 // info
