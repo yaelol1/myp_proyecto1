@@ -49,6 +49,10 @@ func (s *Servidor) InicializaServidor() {
 
 // handleConnection acepta las conexiones y decide qué hacer con ellas
 func (s *Servidor) handleConnection(conn net.Conn) {
+	// prueba raw
+	// b:=make([]byte, 100)
+	// bs, errb := conn.Read(b)
+	// fmt.Println("Mensaje:", string(b[:bs]), errb)
 
 	// Decodificador que lee directamente desde el socket
 	decoder := json.NewDecoder(conn)
@@ -56,6 +60,7 @@ func (s *Servidor) handleConnection(conn net.Conn) {
 	// Interfaz, al no saber qué datos tendrá el JSON
 	var jsonData interface{}
 	for{
+
 		err := decoder.Decode(&jsonData)
 
 		if err != nil {
@@ -71,7 +76,7 @@ func (s *Servidor) handleConnection(conn net.Conn) {
 
 // Response acepta las respuestas de los clientes
 func (s *Servidor) Response(msg map[string]interface{} , conn net.Conn) {
-	fmt.Print("\n Response: ", msg)
+	fmt.Print("\n Request: ", msg)
 
 
 	tipo, ok1 := msg["type"] // Checking for existing key and its value
@@ -94,27 +99,20 @@ func (s *Servidor) Response(msg map[string]interface{} , conn net.Conn) {
 		s.cuartos["General"].agregaIntegrante(conn, usuarioS)
 
 	case "STATUS":
-		general := s.cuartos["General"]
-		userName:=general.obtenNombre(conn)
-
+		userName:= s.userName(conn)
 		response:= map[string]interface{} {"type": "NEW_USER",
 			"username": userName}
 
-		general.Broadcast(conn, response)
+		s.cuartos["General"].Broadcast(conn, response)
 
 	case "USERS":
-
-		users := "[ "
-		for k, _ := range s.users {
-			users += "\" " + k + " \","
+		users := make([]string, 0)
+		for n, _ := range s.users {
+			users = append(users, n)
 		}
-		users = users[:len(users)-1]
-		users += " ]"
 		selfResponse:= map[string]interface{} {"type": "USER_LIST",
 			"usernames": users}
 		s.send(conn, selfResponse)
-
-		fmt.Print("\n Response: ", users)
 
 	case "MESSAGE":
 		user, ok := msg["username"] // Checking for existing key and its value
@@ -131,7 +129,7 @@ func (s *Servidor) Response(msg map[string]interface{} , conn net.Conn) {
 			return
 		}
 
-		userName:=  s.cuartos["General"].obtenNombre(conn)
+		userName:= s.userName(conn)
 		Response:= map[string]interface{} {"type": "MESSAGE",
 			"usernames": userName,
 			"message": msg["message"]}
@@ -140,13 +138,11 @@ func (s *Servidor) Response(msg map[string]interface{} , conn net.Conn) {
 
 
 	case "PUBLIC_MESSAGE":
-		general := s.cuartos["General"]
-		userName:=general.obtenNombre(conn)
-
+		userName:= s.userName(conn)
 		response:= map[string]interface{} {"type": "PUBLIC_MESSAGE_FROM",
 			"username": userName,
 			"message": msg["message"]}
-		general.Broadcast(conn, response)
+		s.cuartos["General"].Broadcast(conn, response)
 
 		selfResponse:= map[string]interface{} {"type": "INFO",
 			"message": "success",
@@ -154,10 +150,12 @@ func (s *Servidor) Response(msg map[string]interface{} , conn net.Conn) {
 		s.send(conn, selfResponse)
 
 	case "NEW_ROOM":
-		roomname := msg["rooomname"].(string)
+		userName:= s.userName(conn)
+		roomname := msg["roomname"].(string)
 		_, ok := s.cuartos[roomname]
 		if !ok {
-			s.cuartos[msg["roomnane"].(string)] = NuevoCuarto(roomname)
+			s.cuartos[roomname] = NuevoCuarto(roomname)
+			s.cuartos[roomname].agregaIntegrante(conn, userName)
 
 			selfResponse:= map[string]interface{} {"type": "INFO",
 				"message": "success",
@@ -172,7 +170,32 @@ func (s *Servidor) Response(msg map[string]interface{} , conn net.Conn) {
 		s.send(conn, selfResponse)
 
 	case "INVITE":
+		roomname, okR := msg["roomname"].(string)
+		if !okR {
+			fmt.Print("invalid roomname")
+			break
+		}
+		integrantesRaw, okI := msg["usernames"]
+		if !okI {
+			fmt.Print("invalid usernames")
+			break
+		}
+		integrantesRaw2 := integrantesRaw.([]interface{})
+		room := s.cuartos[roomname]
+		sender := s.cuartos["General"].obtenNombre(conn)
+		msg := map[string]interface{} {"type": "INVITATION",
+			"message": sender+" te invitó al cuarto '"+roomname+"'",
+			"username": sender,
+			"roomname": roomname}
+		for _, user := range integrantesRaw2{
+			fmt.Print("usernames: "+ user.(string))
+			conn := s.users[user.(string)]
+			s.send(conn, msg)
+			room.agregaIntegrante(conn, user.(string))
+		}
+
 	case "JOIN_ROOM":
+
 	case "ROOM_USERS":
 
 	case "ROOM_MESSAGE":
@@ -199,14 +222,12 @@ func (s *Servidor) send(conn net.Conn, msg map[string]interface{}){
 	}
 }
 
-func toList (usersToConvert map[string]interface{}) string{
+// userConn devuelve la conexión de un cliente a partir de su nombre
+func (s *Servidor) userConn(name string) net.Conn{
+	return s.users[name]
+}
 
-	users := "[ "
-	for k, _ := range usersToConvert {
-		users += "\" " + k + " \","
-	}
-	users = users[:len(users)-1]
-	users += " ]"
-
-	return users
+// userName devuelve el nombre de un usuario a partir de su conexión
+func (s *Servidor) userName(conn net.Conn) string{
+	return s.cuartos["General"].obtenNombre(conn)
 }
