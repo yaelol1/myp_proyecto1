@@ -19,9 +19,13 @@ func NuevoCuarto(name string) *Cuarto{
 	}
 }
 
-// RecibeMensaje recibe el PUBLICMESSAGEFROM.
-func (c *Cuarto) RecibeMensaje(){
-
+// userList manda una lista con todos los usuarios
+func (c *Cuarto) userList() []string {
+	users := make([]string, 0)
+	for _, n := range c.users {
+		users = append(users, n)
+	}
+	return users
 }
 
 // RecibeMensaje recibe una conexión y devuelve el nombre de la persona.

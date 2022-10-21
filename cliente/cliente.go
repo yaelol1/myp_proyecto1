@@ -33,6 +33,7 @@ func (c *Cliente) Conectar(){
 	c.conn = conn
 }
 
+// lee Responde a todos los mensajes entrantes del servidor
 func (c *Cliente) lee(){
 	// Decodificador que lee directamente desde el socket
 	decoder := json.NewDecoder(bufio.NewReader(c.conn))
@@ -53,6 +54,7 @@ func (c *Cliente) lee(){
 	}
 }
 
+// response Decide qué hacer con el mensaje del servidor
 func (c *Cliente) response(msg map[string]interface{}){
 
 	fmt.Println(msg)
