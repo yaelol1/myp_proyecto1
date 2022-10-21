@@ -3,6 +3,7 @@ package main
  import (
 	"bufio"
 	"os"
+	"os/exec"
 	"strings"
 	"fmt"
  )
@@ -10,18 +11,17 @@ package main
 // instrucciones imprime las instrucciones de las funciones
 // del chat.
 func instrucciones(){
-	fmt.Printf("Para mandar mensaje publico /msgAll mensaje \n")
-	fmt.Printf("Para mandar mensaje privado /msg usuario mensaje \n")
-	fmt.Printf("Para mandar mensaje a un cuarto /msg cuarto mensaje \n")
-	fmt.Printf("Para mandar invitación a un cuarto /msg cuarto mensaje \n")
-	fmt.Printf("Para crear un cuarto /room nombreCuarto usuario1 usuario2 ... (Los usuarios son opcionales)\n")
-	fmt.Printf("Para invitar alguien a un cuarto /room nombreCuarto usuario1 usuario2 ... \n")
-	fmt.Printf("Para acepar una invitación a un cuarto /accept nombreCuarto \n")
-	fmt.Printf("Para pedir una lista de todos los usuarios /list \n")
-	fmt.Printf("Para pedir una lista de todos los usuarios en un cuarto /list nombreCuarto\n")
-	fmt.Printf("Para abandonar un cuarto /leave nombreCuarto \n")
-	fmt.Printf("Para cerrar la aplicación /disconnect \n")
-	fmt.Printf("Para imprimir las instrucciones otra vez /info \n")
+	fmt.Printf("/msgAll mensaje Para mandar mensaje publico  \n")
+	fmt.Printf("/msg cuarto mensaje Para mandar mensaje a un cuarto \n")
+	fmt.Printf("/whisper usuario mensaje  Para mandar mensaje privado \n")
+	fmt.Printf("/room nombreCuarto ... Para crear un cuarto \n")
+	fmt.Printf("/invite nombreCuarto usuario1 usuario2 ... Para invitar usuarios a un cuarto \n")
+	fmt.Printf("/accept nombreCuarto Para acepar una invitación a un cuarto  \n")
+	fmt.Printf("/list nombreCuarto Para pedir una lista de todos los usuarios, si no hay nombre de cuarto se listan todos los usuarios \n")
+	fmt.Printf("/leave nombreCuarto Para abandonar un cuarto \n")
+	fmt.Printf("/disconnect Para cerrar la aplicación \n")
+	fmt.Printf("/clear Para limpiar la pantalla \n")
+	fmt.Printf("/help Para imprimir las instrucciones otra vez \n")
 }
 
 // actionTranslator Toma el input del usuario y lo manda a
@@ -35,14 +35,49 @@ func actionTranslator(action string) interface{} {
 		r := map[string]interface{}{"type": "PUBLIC_MESSAGE", "message": actionArr[1]}
 		return r
 
-		case "/msg":
-
+		case "/whisper":
 		recipAndMsg := strings.SplitN(actionArr[1], " ",2)
 		r := map[string]interface{}{"type": "MESSAGE", "username": recipAndMsg[0],"message": recipAndMsg[1]}
 		return r
 
-		case "/info":
+		case "/msg":
+		recipAndMsg := strings.SplitN(actionArr[1], " ",2)
+		r := map[string]interface{}{"type": "ROOM_MESSAGE", "roomname": recipAndMsg[0],"message": recipAndMsg[1]}
+		return r
+
+		case "/room":
+		r := map[string]interface{}{"type": "NEW_ROOM", "roomname": actionArr[1]}
+		return r
+
+		case "/invite":
+		recipAndMsg := strings.SplitN(actionArr[1], " ",2)
+		users := strings.Fields(recipAndMsg[1])
+		r := map[string]interface{}{"type": "INVITE", "roomname": recipAndMsg[0], "usernames": users}
+		return r
+
+		case "/accept":
+		r := map[string]interface{}{"type": "JOIN_ROOM", "roomname": actionArr[1]}
+		return r
+
+		case "/list":
+		if len(actionArr) < 2 {
+			r := map[string]interface{}{"type": "USERS"}
+			return r
+		}
+		r := map[string]interface{}{"type": "ROOM_USERS", "roomname": actionArr[1]}
+		return r
+
+		case "/leave":
+		r := map[string]interface{}{"type": "LEAVE_ROOM", "roomname": actionArr[1]}
+		return r
+
+		case "/help":
 		instrucciones()
+
+		case "/clear":
+		cmd := exec.Command("clear") //Linux example, its tested
+		cmd.Stdout = os.Stdout
+		cmd.Run()
 
 		case "/disconnect":
 		os.Exit(0)
@@ -81,6 +116,7 @@ func main(){
 
 	// Envía el nombre
 	mensaje = map[string]interface{}{"type": "IDENTIFY","username": action}
+	c.nombre = action
 	c.Request(mensaje)
 
 	// Envía el status como conectado

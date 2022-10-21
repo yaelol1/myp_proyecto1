@@ -191,6 +191,7 @@ func (s *Servidor) Response(msg map[string]interface{} , conn net.Conn) {
 	}
 }
 
+// send envía un mensaje a una sola conexión
 func (s *Servidor) send(conn net.Conn, msg map[string]interface{}){
 	d := json.NewEncoder(conn)
 	if err := d.Encode(msg); err != nil {
