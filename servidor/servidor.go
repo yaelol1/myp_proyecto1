@@ -8,11 +8,18 @@ import (
 	"strings"
 )
 
-// Servidor estructura que contiene los cuartos y los comandos para interactuar
-// con el mismo.
+
+// Un User contiene todos los atributos de una conexión
+type User struct {
+	rooms map[string]*Cuarto
+	usersName string
+	conn net.Conn
+}
+
+// Un Servidor contiene los cuartos y los usuarios en él.
 type Servidor struct {
 	cuartos map[string]*Cuarto
-	users   map[string]net.Conn
+	users   map[string]*User
 }
 
 // NuevoServidor crea un servidor y devuelve su apuntador
@@ -190,8 +197,10 @@ func (s *Servidor) identify(conn net.Conn, msg map[string]interface{}) {
 // status cambia el status del usuario.
 func (s *Servidor) status(conn net.Conn, msg map[string]interface{}) {
 	userName := s.userName(conn)
-	response := map[string]interface{}{"type": "NEW_USER",
-		"username": userName}
+	newStatus := msg["status"]
+	response := map[string]interface{}{"type": "NEW_STATUS",
+		"username": userName,
+		"status": newStatus}
 
 	s.cuartos["General"].Broadcast(conn, response)
 }
