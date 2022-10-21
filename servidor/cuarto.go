@@ -8,14 +8,14 @@ import (
 
 type Cuarto struct {
 	name   string
-	users  map[net.Conn]string
+	users  map[net.Conn]*User
 }
 
 // NuevoCuarto crea un cuarto y lo devuelve.
 func NuevoCuarto(name string) *Cuarto{
 	return &Cuarto{
 		name: name,
-		users: make(map[net.Conn]string),
+		users: make(map[net.Conn]*User),
 	}
 }
 
@@ -23,19 +23,19 @@ func NuevoCuarto(name string) *Cuarto{
 func (c *Cuarto) userList() []string {
 	users := make([]string, 0)
 	for _, n := range c.users {
-		users = append(users, n)
+		users = append(users, n.userName)
 	}
 	return users
 }
 
 // RecibeMensaje recibe una conexión y devuelve el nombre de la persona.
 func (c *Cuarto) obtenNombre(conn net.Conn) string{
-	return c.users[conn]
+	return c.users[conn].userName
 }
 
 // agregaIntegrante agrega al integrante y manda un mensaje de bienvenida.
-func (c *Cuarto) agregaIntegrante(conn net.Conn, name string){
-	c.users[conn] = name
+func (c *Cuarto) agregaIntegrante(conn net.Conn, user *User){
+	c.users[conn] = user
 }
 
 // eliminaIntegrante elimina al integrante y manda un mensaje de despedida.

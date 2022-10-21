@@ -1,3 +1,5 @@
+// Package main contiene todo el servidor que recibirá conexiones,
+// las cuales serán tratados como usuarios de un chat de acuerdo al protocolo.
 package main
 
 import (
@@ -11,14 +13,15 @@ import (
 
 // Un User contiene todos los atributos de una conexión
 type User struct {
-	rooms map[string]*Cuarto
-	usersName string
+	rooms []string
+	userName string
 	conn net.Conn
 }
 
 // Un Servidor contiene los cuartos y los usuarios en él.
 type Servidor struct {
 	cuartos map[string]*Cuarto
+	// general *Cuarto
 	users   map[string]*User
 }
 
@@ -26,7 +29,7 @@ type Servidor struct {
 func NuevoServidor() *Servidor {
 	return &Servidor{
 		cuartos: make(map[string]*Cuarto),
-		users:   make(map[string]net.Conn),
+		users:   make(map[string]*User),
 	}
 
 }
@@ -40,16 +43,14 @@ func (s *Servidor) InicializaServidor() {
 		// handle error
 	}
 
-	general := NuevoCuarto("general")
-	s.cuartos["General"] = general
+	General := NuevoCuarto("General")
+	s.cuartos["General"] = General
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
 			log.Printf("failed to accept connection: %s", err.Error())
 			continue
 		}
-		// add accepted connection to the general room
-		general.agregaIntegrante(conn, "")
 
 		// handle input from connection
 		go s.handleConnection(conn)
@@ -157,7 +158,7 @@ func (s *Servidor) validaEntrada(entrada string, msg net.Conn) string {
 
 // userConn devuelve la conexión de un cliente a partir de su nombre.
 func (s *Servidor) userConn(name string) net.Conn {
-	return s.users[name]
+	return s.users[name].conn
 }
 
 // userName devuelve el nombre de un usuario a partir de su conexión.
@@ -168,16 +169,17 @@ func (s *Servidor) userName(conn net.Conn) string {
 // idetify identifica a un usuario en todo el servidor, además de cambiar su
 // nombre en general.
 func (s *Servidor) identify(conn net.Conn, msg map[string]interface{}) {
-	username, ok1 := msg["username"] // Checking for existing key and its value
-	if !ok1 {
-		return
-	}
 
-	userName := username.(string)
+	userName := msg["username"].(string)
 	_, nameTaken := s.users[userName]
 	if !nameTaken {
-		s.users[userName] = conn
-		s.cuartos["General"].agregaIntegrante(conn, userName)
+		newUser := User{
+			rooms: []string{"General"},
+			userName: userName,
+			conn: conn,
+		}
+		s.users[userName] = &newUser
+		s.cuartos["General"].agregaIntegrante(conn, &newUser)
 
 		response := map[string]interface{}{"type": "NEW_USER",
 			"username": userName}
@@ -220,7 +222,7 @@ func (s *Servidor) message(conn net.Conn, msg map[string]interface{}) {
 	if !ok {
 		return
 	}
-	connRecipient, existe := s.users[user.(string)]
+	connRecipient, existe := s.users[user.(string)].userName
 	if !existe {
 		selfResponse := map[string]interface{}{"type": "WARNING",
 			"message":   "El usuario '" + user.(string) + "' no existe",
