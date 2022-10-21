@@ -7,14 +7,12 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"strings"
 )
-
 
 // Un User contiene todos los atributos de una conexión
 type User struct {
-	rooms []string
 	userName string
+	status string
 	conn net.Conn
 }
 
@@ -156,6 +154,14 @@ func (s *Servidor) validaEntrada(entrada string, msg net.Conn) string {
 	panic("")
 }
 
+
+// user devuelve la conexión de un cliente a partir de su nombre.
+// TODO: función user acepta o una conexión o un string para buscar
+// el apuntador del usuario
+// func (s *Servidor) userConn(name string) net.Conn {
+//	return s.users[name].conn
+// }
+
 // userConn devuelve la conexión de un cliente a partir de su nombre.
 func (s *Servidor) userConn(name string) net.Conn {
 	return s.users[name].conn
@@ -174,11 +180,12 @@ func (s *Servidor) identify(conn net.Conn, msg map[string]interface{}) {
 	_, nameTaken := s.users[userName]
 	if !nameTaken {
 		newUser := User{
-			rooms: []string{"General"},
 			userName: userName,
+			status: "away",
 			conn: conn,
 		}
 		s.users[userName] = &newUser
+		s.cuartos["General"].invitaIntegrante(userName)
 		s.cuartos["General"].agregaIntegrante(conn, &newUser)
 
 		response := map[string]interface{}{"type": "NEW_USER",
@@ -199,12 +206,31 @@ func (s *Servidor) identify(conn net.Conn, msg map[string]interface{}) {
 // status cambia el status del usuario.
 func (s *Servidor) status(conn net.Conn, msg map[string]interface{}) {
 	userName := s.userName(conn)
-	newStatus := msg["status"]
+	user := s.users[userName]
+	newStatus := msg["status"].(string)
+	if user.status == newStatus {
+
+		selfResponse := map[string]interface{}{"type": "WARNING",
+			"message": "El estado ya es '"+newStatus+"'",
+			"operation": "STATUS",
+			"status": newStatus }
+
+		s.send(conn, selfResponse)
+		return
+	}
+
+	// respuesta a usuarios
 	response := map[string]interface{}{"type": "NEW_STATUS",
 		"username": userName,
 		"status": newStatus}
-
 	s.cuartos["General"].Broadcast(conn, response)
+
+	// respuesta info a conexión
+	response = map[string]interface{}{"type": "INFO",
+		"message": "success",
+		"operation": "STATUS"}
+
+	s.send(conn, response)
 }
 
 // usersList envía una lista de todos los usuarios en el servidor.
@@ -218,11 +244,8 @@ func (s *Servidor) usersList(conn net.Conn, msg map[string]interface{}) {
 
 // message envía un mensaje de usuario a usuario.
 func (s *Servidor) message(conn net.Conn, msg map[string]interface{}) {
-	user, ok := msg["username"] // Checking for existing key and its value
-	if !ok {
-		return
-	}
-	connRecipient, existe := s.users[user.(string)].userName
+	user := msg["username"] // Checking for existing key and its value
+	connRecipient, existe := s.users[user.(string)]
 	if !existe {
 		selfResponse := map[string]interface{}{"type": "WARNING",
 			"message":   "El usuario '" + user.(string) + "' no existe",
@@ -236,7 +259,7 @@ func (s *Servidor) message(conn net.Conn, msg map[string]interface{}) {
 	Response := map[string]interface{}{"type": "MESSAGE",
 		"usernames": userName,
 		"message":   msg["message"]}
-	s.send(connRecipient, Response)
+	s.send(connRecipient.conn, Response)
 
 }
 
@@ -257,11 +280,12 @@ func (s *Servidor) publicMessage(conn net.Conn, msg map[string]interface{}) {
 // newRoom crea un nuevo cuarto en el servidor.
 func (s *Servidor) newRoom(conn net.Conn, msg map[string]interface{}) {
 	userName := s.userName(conn)
+	user := s.users[userName]
 	roomname := msg["roomname"].(string)
 	_, ok := s.cuartos[roomname]
 	if !ok {
 		s.cuartos[roomname] = NuevoCuarto(roomname)
-		s.cuartos[roomname].agregaIntegrante(conn, userName)
+		s.cuartos[roomname].agregaIntegrante(conn, user)
 
 		selfResponse := map[string]interface{}{"type": "INFO",
 			"message":   "success",
@@ -278,18 +302,21 @@ func (s *Servidor) newRoom(conn net.Conn, msg map[string]interface{}) {
 
 // invite invita uno o más usuarios a un cuarto del servidor.
 func (s *Servidor) invite(conn net.Conn, msg map[string]interface{}) {
-	roomname, okR := msg["roomname"].(string)
-	if !okR {
-		fmt.Print("invalid roomname")
-		return
-	}
-	integrantesRaw, okI := msg["usernames"]
-	if !okI {
-		fmt.Print("invalid usernames")
-		return
-	}
+	roomname := msg["roomname"].(string)
+	integrantesRaw := msg["usernames"]
 	integrantesRaw2 := integrantesRaw.([]interface{})
-	room := s.cuartos[roomname]
+
+	room, existsRoom := s.cuartos[roomname]
+	if !existsRoom {
+		selfResponse := map[string]interface{}{"type": "WARNING",
+			"message": "La sala '"+roomname+"' no existe",
+			"roomname": roomname,
+			"operation": "INVITE"}
+		s.send(conn, selfResponse)
+		return
+	}
+
+	// la sala existe, entonces se mandan las invitaciones
 	sender := s.userName(conn)
 	toSend := map[string]interface{}{"type": "INVITATION",
 		"message":  sender + " te invitó al cuarto '" + roomname + "'",
@@ -298,26 +325,77 @@ func (s *Servidor) invite(conn net.Conn, msg map[string]interface{}) {
 
 	for _, user := range integrantesRaw2 {
 		fmt.Print("usernames: " + user.(string))
-		conn := s.users[user.(string)]
-		s.send(conn, toSend)
-		room.agregaIntegrante(conn, conn.RemoteAddr().String()+
-			" "+user.(string))
+		userToInvite, existsUserToI := s.users[user.(string)]
+		if !existsUserToI {
+			selfResponse := map[string]interface{}{"type": "WARNING",
+				"message": "El usuario '"+user.(string),
+				"username": user.(string),
+				"operation": "INVITE"}
+			s.send(conn, selfResponse)
+			continue
+		}
+		s.send(userToInvite.conn, toSend)
+		room.invitaIntegrante(userToInvite.userName)
 	}
+
+	// info success, se mandaron las invitaciones
+	selfResponse := map[string]interface{}{"type": "INFO",
+		"message": "success",
+		"roomname": roomname,
+		"operation": "INVITE"}
+	s.send(conn, selfResponse)
 }
 
 // joinRoom une al usuario a un servidor si es que lo invitaron al cuarto.
 func (s *Servidor) joinRoom(conn net.Conn, msg map[string]interface{}) {
-	roomName := msg["roomname"].(string)
-	roomToJoin := s.cuartos[roomName]
-	str := roomToJoin.obtenNombre(conn)
-	if str == "" {
+	username := s.userName(conn)
+	user := s.users[username]
+	roomname := msg["roomname"].(string)
+	roomToJoin, existsRoom := s.cuartos[roomname]
+	if !existsRoom {
+		selfResponse := map[string]interface{}{"type": "WARNING",
+			"message": "La sala '"+roomname+"' no existe",
+			"roomname": roomname,
+			"operation": "JOIN_ROOM"}
+		s.send(conn, selfResponse)
+		return
+
+	}
+
+	// verifica si ya estaba en el cuarto
+	if (roomToJoin.esIntegrante(conn)) {
+		selfResponse := map[string]interface{}{"type": "WARNING",
+			"message": "El usuario ya se unió al cuarto '"+roomname+"'",
+			"operation": "JOIN_ROOM",
+			"roomname": roomname }
+		s.send(conn, selfResponse)
 		return
 	}
-	if strings.HasPrefix(str, conn.RemoteAddr().String()+" ") {
-		roomToJoin.agregaIntegrante(conn,
-			strings.TrimPrefix(str, conn.RemoteAddr().String()+" "))
+
+	// verifica que el usuario tenga una invitación
+	if !(roomToJoin.fueInvitado(username)){
+		selfResponse := map[string]interface{}{"type": "WARNING",
+			"message": "El usuario no ha sido invitado al cuarto '"+roomname+"'",
+			"operation": "JOIN_ROOM",
+			"roomname": roomname }
+		s.send(conn, selfResponse)
 		return
 	}
+
+	roomToJoin.agregaIntegrante(conn, user)
+
+	// mensaje a los demás usuarios
+	response := map[string]interface{}{"type": "JOINED_ROOM",
+		"username": username,
+		"roomname": roomname }
+	roomToJoin.Broadcast(conn, response)
+
+	// mensaje de éxito
+	selfResponse := map[string]interface{}{"type": "INFO",
+		"message": "success",
+		"operation": "JOIN_ROOM",
+		"roomname": roomname }
+	s.send(conn, selfResponse)
 }
 
 // roomUsers manda una lista de los usuarios dentro de un cuarto.
