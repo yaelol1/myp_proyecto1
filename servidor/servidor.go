@@ -90,7 +90,7 @@ func (s *Servidor) handleConnection(conn net.Conn) {
 
 // Response acepta las respuestas de los clientes.
 func (s *Servidor) Response(msg map[string]interface{}, conn net.Conn) {
-	fmt.Print("\n Request: ", msg)
+	fmt.Println("Request: ", msg)
 
 	// en caso de error solo termina la función
 	defer func() {
@@ -142,6 +142,8 @@ func (s *Servidor) Response(msg map[string]interface{}, conn net.Conn) {
 
 // send envía un mensaje a una sola conexión.
 func (s *Servidor) send(conn net.Conn, msg map[string]interface{}) {
+	fmt.Println("Sending: ", msg)
+
 	d := json.NewEncoder(conn)
 	if err := d.Encode(msg); err != nil {
 		fmt.Println(err)
@@ -256,8 +258,8 @@ func (s *Servidor) message(conn net.Conn, msg map[string]interface{}) {
 	}
 
 	userName := s.userName(conn)
-	Response := map[string]interface{}{"type": "MESSAGE",
-		"usernames": userName,
+	Response := map[string]interface{}{"type": "MESSAGE_FROM",
+		"username": userName,
 		"message":   msg["message"]}
 	s.send(connRecipient.conn, Response)
 
@@ -328,7 +330,7 @@ func (s *Servidor) invite(conn net.Conn, msg map[string]interface{}) {
 		userToInvite, existsUserToI := s.users[user.(string)]
 		if !existsUserToI {
 			selfResponse := map[string]interface{}{"type": "WARNING",
-				"message": "El usuario '"+user.(string),
+				"message": "El usuario '"+user.(string)+"' no existe",
 				"username": user.(string),
 				"operation": "INVITE"}
 			s.send(conn, selfResponse)
@@ -401,8 +403,27 @@ func (s *Servidor) joinRoom(conn net.Conn, msg map[string]interface{}) {
 // roomUsers manda una lista de los usuarios dentro de un cuarto.
 func (s *Servidor) roomUsers(conn net.Conn, msg map[string]interface{}) {
 	roomname := msg["roomname"].(string)
-	cuarto := s.cuartos[roomname]
-	userList := cuarto.userList
+	cuarto, existsRoom := s.cuartos[roomname]
+	if !existsRoom {
+		selfResponse := map[string]interface{}{"type": "WARNING",
+			"message": "La sala '"+roomname+"' no existe",
+			"roomname": roomname,
+			"operation": "ROOM_USERS"}
+		s.send(conn, selfResponse)
+		return
+	}
+
+	if !(cuarto.esIntegrante(conn)){
+		selfResponse := map[string]interface{}{"type": "WARNING",
+			"message": "El usuario no se ha unido a '"+
+				roomname+"'",
+			"roomname": roomname,
+			"operation": "ROOM_USERS"}
+		s.send(conn, selfResponse)
+		return
+	}
+
+	userList := cuarto.userList()
 	selfResponse := map[string]interface{}{"type": "ROOM_USER_LIST",
 		"usernames": userList}
 	s.send(conn, selfResponse)
@@ -410,15 +431,32 @@ func (s *Servidor) roomUsers(conn net.Conn, msg map[string]interface{}) {
 
 // roomMessage envía un mensaje dentro de un cuarto.
 func (s *Servidor) roomMessage(conn net.Conn, msg map[string]interface{}) {
-	nombreCuarto := msg["roomname"].(string)
-	r, ok := s.cuartos[nombreCuarto]
+	roomname := msg["roomname"].(string)
+	r, ok := s.cuartos[roomname]
+
+	// se asegura que el cuarto exista
 	if !ok {
+		selfResponse := map[string]interface{}{"type": "WARNING",
+			"message": "La sala '"+roomname+"' no existe",
+			"roomname": roomname,
+			"operation": "ROOM_MESSAGE"}
+		s.send(conn, selfResponse)
+		return
+	}
+
+	if !(r.esIntegrante(conn)){
+		selfResponse := map[string]interface{}{"type": "WARNING",
+			"message": "El usuario no se ha unido a '"+
+				roomname+"'",
+			"roomname": roomname,
+			"operation": "ROOM_MESSAGE"}
+		s.send(conn, selfResponse)
 		return
 	}
 
 	userName := s.userName(conn)
 	response := map[string]interface{}{"type": "ROOM_MESSAGE_FROM",
-		"roomname": nombreCuarto,
+		"roomname": roomname,
 		"username": userName,
 		"message":  msg["message"]}
 	r.Broadcast(conn, response)
@@ -432,16 +470,61 @@ func (s *Servidor) roomMessage(conn net.Conn, msg map[string]interface{}) {
 // leaveRoom
 func (s *Servidor) leaveRoom(conn net.Conn, msg map[string]interface{}) {
 	roomname := msg["roomname"].(string)
-	room := s.cuartos[roomname]
+	room, ok := s.cuartos[roomname]
+	// se asegura que el cuarto exista
+	if !ok {
+		selfResponse := map[string]interface{}{"type": "WARNING",
+			"message": "La sala '"+roomname+"' no existe",
+			"roomname": roomname,
+			"operation": "LEAVE_ROOM"}
+		s.send(conn, selfResponse)
+		return
+	}
+
+	if !(room.esIntegrante(conn)){
+		selfResponse := map[string]interface{}{"type": "WARNING",
+			"message": "El usuario no se ha unido a '"+
+				roomname+"'",
+			"roomname": roomname,
+			"operation": "LEAVE_ROOM"}
+		s.send(conn, selfResponse)
+		return
+	}
+
+	userName := s.userName(conn)
+	response := map[string]interface{}{"type": "LEAVE_ROOM",
+		"roomname": roomname,
+		"username": userName }
+	room.Broadcast(conn, response)
+
+	selfResponse := map[string]interface{}{"type": "INFO",
+		"message":   "success",
+		"roomname": roomname,
+		"operation": "LEAVE_ROOM"}
+	s.send(conn, selfResponse)
 
 	room.eliminaIntegrante(conn)
 }
 
 // disconnect
 func (s *Servidor) disconnect(conn net.Conn, msg map[string]interface{}) {
+	userName := s.userName(conn)
 
-	for _, room := range s.cuartos {
-		room.eliminaIntegrante(conn)
+	// respuesta a usuarios
+	response := map[string]interface{}{"type": "DISCONNECTED",
+		"username": userName }
+
+	s.cuartos["General"].Broadcast(conn, response)
+
+	for roomname, room := range s.cuartos {
+		if room.esIntegrante(conn) {
+			room.eliminaIntegrante(conn)
+
+			response := map[string]interface{}{"type": "LEFT_ROOM",
+				"roomname": roomname,
+				"username": userName }
+			room.Broadcast(conn, response)
+		}
 	}
 }
 

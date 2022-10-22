@@ -3,6 +3,7 @@ package main
  import (
 	"bufio"
 	"os"
+	"time"
 	"os/exec"
 	"strings"
 	"fmt"
@@ -27,6 +28,13 @@ func instrucciones(){
 // actionTranslator Toma el input del usuario y lo manda a
 // request al servidor
 func actionTranslator(action string) interface{} {
+	// Si hay un error continua
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Printf("\n Comando o formato no válido, para imprimir la lista de comandos escriba /help \n")
+		}
+	}()
+
 	actionArr := strings.SplitN(action, " ",2)
 
 
@@ -80,7 +88,9 @@ func actionTranslator(action string) interface{} {
 		cmd.Run()
 
 		case "/disconnect":
-		os.Exit(0)
+		r := map[string]interface{}{"type": "DISCONNECT"}
+		go exit()
+		return r
 
 		default:
 		fmt.Printf(actionArr[0])
@@ -90,6 +100,16 @@ func actionTranslator(action string) interface{} {
 	return nil
 }
 
+func exit(){
+
+	DurationOfTime := time.Duration(1) * time.Second
+	f := func() {
+		os.Exit(0)
+	}
+	Timer1 := time.AfterFunc(DurationOfTime, f)
+	defer Timer1.Stop()
+	time.Sleep(1 * time.Second)
+}
 // main crea un cliente y lo conecta al servidor, también le
 // da la bienvenida y abre el menú
 func main(){
@@ -98,6 +118,7 @@ func main(){
 	c := NuevoCliente()
 	c.Conectar()
 	go c.lee()
+
 	reader := bufio.NewReader(os.Stdin)
 
 	// Menu

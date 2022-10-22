@@ -56,30 +56,58 @@ func (c *Cliente) lee(){
 
 // response Decide qué hacer con el mensaje del servidor
 func (c *Cliente) response(msg map[string]interface{}){
+	defer func() {
+		if err := recover(); err != nil {
+		}
+	}()
+	// fmt.Print("DEBUG: ", msg, "\n")
 
-	fmt.Println(msg)
-
-	tipo, ok1 := msg["type"] // Checking for existing key and its value
-	if !ok1 {
-		fmt.Println("Se necesita un tipo")
-		return
-	}
-
-
-	switch tipo {
+	switch msg["type"] {
 	case "ERROR":
+		fallthrough
 	case "WARNING":
+		fallthrough
+	case "INVITATION":
+		fallthrough
 	case "INFO":
+		fmt.Println(msg["message"].(string))
 	case "NEW_USER":
+		fmt.Println("Nuevo usuario: ",msg["username"].(string))
 	case "NEW_STATUS":
-	case "USER_LIST":
-	case "MESSAGE_FROM":
-	case "PUBLIC_MESSAGE_FROM":
+		fmt.Println("Usuario: ",msg["username"].(string),
+			" cambió su estado a '", msg["status"].(string), "'")
 	case "JOINED_ROOM":
+		fmt.Println("(", msg["roomname"].(string), ") ", msg["username"].(string),
+			" se unió al chat ")
 	case "ROOM_USER_LIST":
+		fmt.Print("(Del cuarto ) ")
+		fallthrough
+	case "USER_LIST":
+		integrantesRaw := msg["usernames"]
+		integrantesRaw2 := integrantesRaw.([]interface{})
+
+		users := ""
+		for _, user := range integrantesRaw2 {
+			users += user.(string) + ", "
+		}
+		users = users[:len(users)-2]
+		users += "."
+		fmt.Println("todos los usuarios son: ", users)
+
+	case "PUBLIC_MESSAGE_FROM":
+		fmt.Println("(público) ", msg["username"].(string),
+			": ", msg["message"].(string))
 	case "ROOM_MESSAGE_FROM":
+		fmt.Println("(", msg["roomname"].(string), ") ", msg["username"].(string),
+			": ", msg["message"].(string))
+	case "MESSAGE_FROM":
+		fmt.Println("[susurro] ", msg["username"].(string),
+			": ", msg["message"].(string))
 	case "LEFT_ROOM":
-	case "DISCONECTED":
+		fmt.Println("(", msg["roomname"].(string), ") ", msg["username"].(string),
+			" se salió del chat ")
+	case "DISCONNECTED":
+		fmt.Println(msg["username"].(string), " se desconectó")
 	default:
 		fmt.Print("DEBUG: invalid", msg)
 	}

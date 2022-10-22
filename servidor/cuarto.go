@@ -73,6 +73,8 @@ func (c *Cuarto) Broadcast(conn net.Conn, mensaje map[string]interface{}){
 			if err := d.Encode(mensaje); err != nil {
 				fmt.Println(err)
 			}
+		} else {
+			fmt.Println("Sending: ", mensaje)
 		}
 	}
 
