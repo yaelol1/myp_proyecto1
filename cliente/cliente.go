@@ -1,3 +1,5 @@
+// Package main crea un cliente que se conecta a un servidor
+// envía y recibe mensajes con el protocolo
 package main
 
 import (
@@ -9,7 +11,6 @@ import (
 
 type Cliente struct {
 	nombre   string
-	cuartos map[string]*string
 	conn net.Conn
 }
 
@@ -17,7 +18,6 @@ type Cliente struct {
 func NuevoCliente() *Cliente {
 	return &Cliente{
 		nombre: "Yael",
-		cuartos: make(map[string]*string),
 		conn:  nil,
 	}
 }
@@ -27,7 +27,7 @@ func (c *Cliente) Conectar(){
 	conn, err := net.Dial("tcp", ":3306")
 	if err != nil {
 		// handle error
-
+		panic("Servidor no se pudo conectar")
 	}
 
 	c.conn = conn
@@ -45,7 +45,7 @@ func (c *Cliente) lee(){
 
 		if err != nil {
 			fmt.Println(jsonData, err)
-			return
+			continue
 			// handle error
 		}
 		// Se convierte a un mapa

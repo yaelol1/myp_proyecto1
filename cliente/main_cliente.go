@@ -1,3 +1,5 @@
+// Package main crea un cliente que se conecta a un servidor
+// envía y recibe mensajes con el protocolo
 package main
 
  import (
@@ -19,9 +21,11 @@ func instrucciones(){
 	fmt.Printf("/invite nombreCuarto usuario1 usuario2 ... Para invitar usuarios a un cuarto \n")
 	fmt.Printf("/accept nombreCuarto Para acepar una invitación a un cuarto  \n")
 	fmt.Printf("/list nombreCuarto Para pedir una lista de todos los usuarios, si no hay nombre de cuarto se listan todos los usuarios \n")
+	fmt.Printf("/relog name y recon  en caso de que login no funcione \n")
 	fmt.Printf("/leave nombreCuarto Para abandonar un cuarto \n")
 	fmt.Printf("/disconnect Para cerrar la aplicación \n")
 	fmt.Printf("/clear Para limpiar la pantalla \n")
+
 	fmt.Printf("/help Para imprimir las instrucciones otra vez \n")
 }
 
@@ -77,6 +81,14 @@ func actionTranslator(action string) interface{} {
 
 		case "/leave":
 		r := map[string]interface{}{"type": "LEAVE_ROOM", "roomname": actionArr[1]}
+		return r
+
+		case"/relog":
+		r := map[string]interface{}{"type": "IDENTIFY","username": actionArr[1]}
+		return r
+
+		case "/recon":
+		r := map[string]interface{}{"type": "STATUS","status": "CONNECTED"}
 		return r
 
 		case "/help":

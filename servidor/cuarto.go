@@ -30,9 +30,10 @@ func (c *Cuarto) userList() []string {
 	return users
 }
 
-// RecibeMensaje recibe una conexión y devuelve el nombre de la persona.
-func (c *Cuarto) obtenNombre(conn net.Conn) string{
-	return c.users[conn].userName
+
+// User regresa el usuario del cuarto de acuerdo a su conexión.
+func (c *Cuarto) User(conn net.Conn) *User{
+	return c.users[conn]
 }
 
 // agregaIntegrante agrega al integrante al mapa de usuarios.

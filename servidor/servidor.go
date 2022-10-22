@@ -19,7 +19,7 @@ type User struct {
 // Un Servidor contiene los cuartos y los usuarios en él.
 type Servidor struct {
 	cuartos map[string]*Cuarto
-	// general *Cuarto
+	general *Cuarto
 	users   map[string]*User
 }
 
@@ -28,6 +28,7 @@ func NuevoServidor() *Servidor {
 	return &Servidor{
 		cuartos: make(map[string]*Cuarto),
 		users:   make(map[string]*User),
+		general: NuevoCuarto("General"),
 	}
 
 }
@@ -41,8 +42,6 @@ func (s *Servidor) InicializaServidor() {
 		// handle error
 	}
 
-	General := NuevoCuarto("General")
-	s.cuartos["General"] = General
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
@@ -57,11 +56,6 @@ func (s *Servidor) InicializaServidor() {
 
 // handleConnection acepta las conexiones y decide qué hacer con ellas.
 func (s *Servidor) handleConnection(conn net.Conn) {
-	// prueba raw
-	// b:=make([]byte, 100)
-	// bs, errb := conn.Read(b)
-	// fmt.Println("Mensaje:", string(b[:bs]), errb)
-
 	// Si hay en error solo cierra la conexión
 	defer func() {
 		if err := recover(); err != nil {
@@ -150,28 +144,22 @@ func (s *Servidor) send(conn net.Conn, msg map[string]interface{}) {
 	}
 }
 
-// validaEntrada valida la entrada de datos.
-// TODO: Necesario?
-func (s *Servidor) validaEntrada(entrada string, msg net.Conn) string {
-	panic("")
-}
 
 
-// user devuelve la conexión de un cliente a partir de su nombre.
-// TODO: función user acepta o una conexión o un string para buscar
-// el apuntador del usuario
-// func (s *Servidor) userConn(name string) net.Conn {
-//	return s.users[name].conn
-// }
+// user devuelve al usuario a partir de su conexión o nombre.
+func (s *Servidor) user(userAsked interface{}) *User{
 
-// userConn devuelve la conexión de un cliente a partir de su nombre.
-func (s *Servidor) userConn(name string) net.Conn {
-	return s.users[name].conn
-}
+	conn, isConn := userAsked.(net.Conn)
+	if isConn {
+		return s.general.User(conn)
+	}
 
-// userName devuelve el nombre de un usuario a partir de su conexión.
-func (s *Servidor) userName(conn net.Conn) string {
-	return s.cuartos["General"].obtenNombre(conn)
+	name, isName := userAsked.(string)
+	if isName {
+		return s.users[name]
+	}
+
+	panic("Not a name or connection was passed")
 }
 
 // idetify identifica a un usuario en todo el servidor, además de cambiar su
@@ -187,13 +175,13 @@ func (s *Servidor) identify(conn net.Conn, msg map[string]interface{}) {
 			conn: conn,
 		}
 		s.users[userName] = &newUser
-		s.cuartos["General"].invitaIntegrante(userName)
-		s.cuartos["General"].agregaIntegrante(conn, &newUser)
+		s.general.invitaIntegrante(userName)
+		s.general.agregaIntegrante(conn, &newUser)
 
 		response := map[string]interface{}{"type": "NEW_USER",
 			"username": userName}
 
-		s.cuartos["General"].Broadcast(conn, response)
+		s.general.Broadcast(conn, response)
 		return
 	}
 
@@ -207,8 +195,8 @@ func (s *Servidor) identify(conn net.Conn, msg map[string]interface{}) {
 
 // status cambia el status del usuario.
 func (s *Servidor) status(conn net.Conn, msg map[string]interface{}) {
-	userName := s.userName(conn)
-	user := s.users[userName]
+	user := s.user(conn)
+	userName := user.userName
 	newStatus := msg["status"].(string)
 	if user.status == newStatus {
 
@@ -225,7 +213,7 @@ func (s *Servidor) status(conn net.Conn, msg map[string]interface{}) {
 	response := map[string]interface{}{"type": "NEW_STATUS",
 		"username": userName,
 		"status": newStatus}
-	s.cuartos["General"].Broadcast(conn, response)
+	s.general.Broadcast(conn, response)
 
 	// respuesta info a conexión
 	response = map[string]interface{}{"type": "INFO",
@@ -238,7 +226,7 @@ func (s *Servidor) status(conn net.Conn, msg map[string]interface{}) {
 // usersList envía una lista de todos los usuarios en el servidor.
 func (s *Servidor) usersList(conn net.Conn, msg map[string]interface{}) {
 	var users []string
-	users = s.cuartos["General"].userList()
+	users = s.general.userList()
 	selfResponse := map[string]interface{}{"type": "USER_LIST",
 		"usernames": users}
 	s.send(conn, selfResponse)
@@ -257,7 +245,7 @@ func (s *Servidor) message(conn net.Conn, msg map[string]interface{}) {
 		return
 	}
 
-	userName := s.userName(conn)
+	userName := s.user(conn).userName
 	Response := map[string]interface{}{"type": "MESSAGE_FROM",
 		"username": userName,
 		"message":   msg["message"]}
@@ -267,11 +255,11 @@ func (s *Servidor) message(conn net.Conn, msg map[string]interface{}) {
 
 // publicMessage envía un mensaje a todos los usuarios conectados.
 func (s *Servidor) publicMessage(conn net.Conn, msg map[string]interface{}) {
-	userName := s.userName(conn)
+	userName := s.user(conn).userName
 	response := map[string]interface{}{"type": "PUBLIC_MESSAGE_FROM",
 		"username": userName,
 		"message":  msg["message"]}
-	s.cuartos["General"].Broadcast(conn, response)
+	s.general.Broadcast(conn, response)
 
 	selfResponse := map[string]interface{}{"type": "INFO",
 		"message":   "success",
@@ -281,8 +269,7 @@ func (s *Servidor) publicMessage(conn net.Conn, msg map[string]interface{}) {
 
 // newRoom crea un nuevo cuarto en el servidor.
 func (s *Servidor) newRoom(conn net.Conn, msg map[string]interface{}) {
-	userName := s.userName(conn)
-	user := s.users[userName]
+	user := s.user(conn)
 	roomname := msg["roomname"].(string)
 	_, ok := s.cuartos[roomname]
 	if !ok {
@@ -319,7 +306,7 @@ func (s *Servidor) invite(conn net.Conn, msg map[string]interface{}) {
 	}
 
 	// la sala existe, entonces se mandan las invitaciones
-	sender := s.userName(conn)
+	sender := s.user(conn).userName
 	toSend := map[string]interface{}{"type": "INVITATION",
 		"message":  sender + " te invitó al cuarto '" + roomname + "'",
 		"username": sender,
@@ -350,30 +337,18 @@ func (s *Servidor) invite(conn net.Conn, msg map[string]interface{}) {
 
 // joinRoom une al usuario a un servidor si es que lo invitaron al cuarto.
 func (s *Servidor) joinRoom(conn net.Conn, msg map[string]interface{}) {
-	username := s.userName(conn)
-	user := s.users[username]
+	user := s.user(conn)
+	username := user.userName
 	roomname := msg["roomname"].(string)
-	roomToJoin, existsRoom := s.cuartos[roomname]
-	if !existsRoom {
-		selfResponse := map[string]interface{}{"type": "WARNING",
-			"message": "La sala '"+roomname+"' no existe",
-			"roomname": roomname,
-			"operation": "JOIN_ROOM"}
-		s.send(conn, selfResponse)
-		return
 
-	}
-
-	// verifica si ya estaba en el cuarto
-	if (roomToJoin.esIntegrante(conn)) {
-		selfResponse := map[string]interface{}{"type": "WARNING",
-			"message": "El usuario ya se unió al cuarto '"+roomname+"'",
-			"operation": "JOIN_ROOM",
-			"roomname": roomname }
-		s.send(conn, selfResponse)
+	msgErr, esValido := s.validaCuarto(conn, msg)
+	if !esValido {
+		msgErr["operation"]= "JOIN_ROOM"
+		s.send(conn, msgErr)
 		return
 	}
 
+	roomToJoin := s.cuartos[roomname]
 	// verifica que el usuario tenga una invitación
 	if !(roomToJoin.fueInvitado(username)){
 		selfResponse := map[string]interface{}{"type": "WARNING",
@@ -403,25 +378,15 @@ func (s *Servidor) joinRoom(conn net.Conn, msg map[string]interface{}) {
 // roomUsers manda una lista de los usuarios dentro de un cuarto.
 func (s *Servidor) roomUsers(conn net.Conn, msg map[string]interface{}) {
 	roomname := msg["roomname"].(string)
-	cuarto, existsRoom := s.cuartos[roomname]
-	if !existsRoom {
-		selfResponse := map[string]interface{}{"type": "WARNING",
-			"message": "La sala '"+roomname+"' no existe",
-			"roomname": roomname,
-			"operation": "ROOM_USERS"}
-		s.send(conn, selfResponse)
+
+	msgErr, esValido := s.validaCuarto(conn, msg)
+	if !esValido {
+		msgErr["operation"]= "ROOM_USERS"
+		s.send(conn, msgErr)
 		return
 	}
 
-	if !(cuarto.esIntegrante(conn)){
-		selfResponse := map[string]interface{}{"type": "WARNING",
-			"message": "El usuario no se ha unido a '"+
-				roomname+"'",
-			"roomname": roomname,
-			"operation": "ROOM_USERS"}
-		s.send(conn, selfResponse)
-		return
-	}
+	cuarto := s.cuartos[roomname]
 
 	userList := cuarto.userList()
 	selfResponse := map[string]interface{}{"type": "ROOM_USER_LIST",
@@ -432,29 +397,16 @@ func (s *Servidor) roomUsers(conn net.Conn, msg map[string]interface{}) {
 // roomMessage envía un mensaje dentro de un cuarto.
 func (s *Servidor) roomMessage(conn net.Conn, msg map[string]interface{}) {
 	roomname := msg["roomname"].(string)
-	r, ok := s.cuartos[roomname]
 
-	// se asegura que el cuarto exista
-	if !ok {
-		selfResponse := map[string]interface{}{"type": "WARNING",
-			"message": "La sala '"+roomname+"' no existe",
-			"roomname": roomname,
-			"operation": "ROOM_MESSAGE"}
-		s.send(conn, selfResponse)
+	msgErr, esValido := s.validaCuarto(conn, msg)
+	if !esValido {
+		msgErr["operation"]= "ROOM_MESSAGE"
+		s.send(conn, msgErr)
 		return
 	}
 
-	if !(r.esIntegrante(conn)){
-		selfResponse := map[string]interface{}{"type": "WARNING",
-			"message": "El usuario no se ha unido a '"+
-				roomname+"'",
-			"roomname": roomname,
-			"operation": "ROOM_MESSAGE"}
-		s.send(conn, selfResponse)
-		return
-	}
-
-	userName := s.userName(conn)
+	r := s.cuartos[roomname]
+	userName := s.user(conn).userName
 	response := map[string]interface{}{"type": "ROOM_MESSAGE_FROM",
 		"roomname": roomname,
 		"username": userName,
@@ -467,31 +419,18 @@ func (s *Servidor) roomMessage(conn net.Conn, msg map[string]interface{}) {
 	s.send(conn, selfResponse)
 }
 
-// leaveRoom
+// leaveRoom sale de un cuarto.
 func (s *Servidor) leaveRoom(conn net.Conn, msg map[string]interface{}) {
 	roomname := msg["roomname"].(string)
-	room, ok := s.cuartos[roomname]
-	// se asegura que el cuarto exista
-	if !ok {
-		selfResponse := map[string]interface{}{"type": "WARNING",
-			"message": "La sala '"+roomname+"' no existe",
-			"roomname": roomname,
-			"operation": "LEAVE_ROOM"}
-		s.send(conn, selfResponse)
+	msgErr, esValido := s.validaCuarto(conn, msg)
+	if !esValido {
+		msgErr["operation"]= "LEAVE_ROOM"
+		s.send(conn, msgErr)
 		return
 	}
 
-	if !(room.esIntegrante(conn)){
-		selfResponse := map[string]interface{}{"type": "WARNING",
-			"message": "El usuario no se ha unido a '"+
-				roomname+"'",
-			"roomname": roomname,
-			"operation": "LEAVE_ROOM"}
-		s.send(conn, selfResponse)
-		return
-	}
-
-	userName := s.userName(conn)
+	room  := s.cuartos[roomname]
+	userName := s.user(conn).userName
 	response := map[string]interface{}{"type": "LEAVE_ROOM",
 		"roomname": roomname,
 		"username": userName }
@@ -506,15 +445,15 @@ func (s *Servidor) leaveRoom(conn net.Conn, msg map[string]interface{}) {
 	room.eliminaIntegrante(conn)
 }
 
-// disconnect
+// disconnect desconecta al usuario de todos los cuartos, incluido el principal.
 func (s *Servidor) disconnect(conn net.Conn, msg map[string]interface{}) {
-	userName := s.userName(conn)
+	userName := s.user(conn).userName
 
 	// respuesta a usuarios
 	response := map[string]interface{}{"type": "DISCONNECTED",
 		"username": userName }
 
-	s.cuartos["General"].Broadcast(conn, response)
+	s.general.Broadcast(conn, response)
 
 	for roomname, room := range s.cuartos {
 		if room.esIntegrante(conn) {
@@ -526,6 +465,28 @@ func (s *Servidor) disconnect(conn net.Conn, msg map[string]interface{}) {
 			room.Broadcast(conn, response)
 		}
 	}
+}
+
+// validaCuarto valida que el cuarto exista y el usuario esté en el mismo.
+func (s *Servidor) validaCuarto(conn net.Conn ,msg map[string]interface{}) (map[string]interface{}, bool) {
+	roomname := msg["roomname"].(string)
+	room, ok := s.cuartos[roomname]
+	// se asegura que el cuarto exista
+	if !ok {
+		selfResponse := map[string]interface{}{"type": "WARNING",
+			"message": "La sala '"+roomname+"' no existe",
+			"roomname": roomname }
+		return selfResponse, false
+	}
+
+	if !(room.esIntegrante(conn)){
+		selfResponse := map[string]interface{}{"type": "WARNING",
+			"message": "El usuario no se ha unido a '"+
+				roomname+"'",
+			"roomname": roomname }
+		return selfResponse, false
+	}
+	return make(map[string]interface{}), true
 }
 
 // info

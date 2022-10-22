@@ -7,6 +7,7 @@ package main
  )
 
 func main(){
+	// TODO: Cómo cerrar el servidor
 	s := NuevoServidor()
 	s.InicializaServidor();
 }
