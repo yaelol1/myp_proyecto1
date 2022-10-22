@@ -30,15 +30,21 @@ en este proyecto; será fácil encontrarlas.
 - Cliente
   - Nombre
   - Conexión
-  - Cuartos
 
 ### Paquete Servidor
 
+- User
+  - Conexión
+  - Nombre
+  - Status
 - Cuarto
   - Nombre
   - Integrantes
+  - Invitaciones
 - Servidor
   - Cuartos
+  - Usuarios
+  - general
 
 ## Compilar
 Para usar el cliente, el servidor tiene que estar corriendo.

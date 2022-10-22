@@ -54,6 +54,7 @@ func (s *Servidor) InicializaServidor() {
 	}
 }
 
+
 // handleConnection acepta las conexiones y decide qué hacer con ellas.
 func (s *Servidor) handleConnection(conn net.Conn) {
 	// Si hay en error solo cierra la conexión
